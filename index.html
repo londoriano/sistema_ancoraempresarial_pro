@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Âncora Empresarial | Acesso</title>
+    <link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="lib/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: url(/img/background.jpg) no-repeat center center fixed;
+            background-size: cover;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 100%;
+            max-width: 450px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+        .system-id-box {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-family: monospace;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
+            border: 1px dashed #6c757d;
+            margin-bottom: 1rem;
+            cursor: pointer;
+        }
+        .system-id-box:hover { background: #dee2e6; }
+        .btn-brand { background-color: #2c3e50; color: white; font-weight: bold; }
+        .btn-brand:hover { background-color: #1a252f; color: white; }
+        
+        /* Utilitário para esconder seções */
+        .d-none-custom { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="logo-area text-center mb-4">
+            <h2 class="fw-bold text-dark"><i class="bi bi-building"></i> Âncora</h2>
+            <h5 class="text-secondary">Consultoria Empresarial</h5>
+            <hr>
+        </div>
+
+        <div id="sectionActivation">
+            <div class="mb-4">
+                <label class="form-label text-muted small">ID DESTE SISTEMA:</label>
+                <div class="system-id-box" id="systemIdDisplay" title="Clique para copiar" onclick="copiarID()">
+                    CARREGANDO...
+                </div>
+            </div>
+
+            <form id="loginForm" onsubmit="validarAcesso(event)">
+                <div class="mb-3">
+                    <label for="inputKey" class="form-label fw-bold">Chave de Ativação</label>
+                    <input type="text" class="form-control form-control-lg text-center font-monospace text-uppercase" 
+                           id="inputKey" placeholder="KEY-00000000" required>
+                    <div class="form-text text-danger" id="errorMsg" style="display:none;">
+                        <i class="bi bi-exclamation-triangle"></i> Chave inválida.
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-brand btn-lg">VALIDAR ACESSO</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="sectionWelcome" class="d-none-custom text-center">
+            <div class="mb-4">
+                <i class="bi bi-shield-check text-success" style="font-size: 4rem;"></i>
+                <h4 class="mt-2 fw-bold text-dark">Acesso Autorizado</h4>
+                <p class="text-muted">Licença válida. Pronto para operar.</p>
+            </div>
+            <div class="d-grid gap-2">
+                <button onclick="entrarSistema()" class="btn btn-success btn-lg fw-bold shadow-sm">
+                    INICIAR SISTEMA <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+            <div class="mt-3">
+                <button onclick="resetarLicenca()" class="btn btn-link btn-sm text-muted text-decoration-none">
+                    Alterar Licença
+                </button>
+            </div>
+        </div>
+        
+        <div class="text-center mt-3">
+            <small class="text-muted">v1.0.0 &copy; 2026 Jeferson Silveira</small>
+        </div>
+    </div>
+
+    <script src="lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const SEGREDO_MESTRE = "ANCORA_SISTEMA_FINANCEIRO_V1_2026_SEGREDO"; 
+        
+        // Inicialização
+        let systemId = localStorage.getItem('ancora_empresarial_sys_id');
+        if (!systemId) {
+            const p1 = Math.random().toString(36).substring(2, 6).toUpperCase();
+            const p2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+            systemId = `SYS-${p1}-${p2}`;
+            localStorage.setItem('ancora_empresarial_sys_id', systemId);
+        }
+        document.getElementById('systemIdDisplay').innerText = systemId;
+
+        // VERIFICAÇÃO DE ESTADO
+        verificarEstadoInicial();
+
+        function verificarEstadoInicial() {
+            const isActivated = localStorage.getItem('ancora_empresarial_activated') === 'true';
+            const sectionAct = document.getElementById('sectionActivation');
+            const sectionWel = document.getElementById('sectionWelcome');
+
+            if (isActivated) {
+                sectionAct.classList.add('d-none-custom');
+                sectionWel.classList.remove('d-none-custom');
+            } else {
+                sectionAct.classList.remove('d-none-custom');
+                sectionWel.classList.add('d-none-custom');
+            }
+        }
+
+        function entrarSistema() {
+            window.location.href = 'clientes.html';
+        }
+
+        function resetarLicenca() {
+            if(confirm("Deseja remover a ativação desta máquina?")) {
+                localStorage.removeItem('ancora_empresarial_activated');
+                location.reload();
+            }
+        }
+
+        function validarAcesso(e) {
+            e.preventDefault();
+            const inputKey = document.getElementById('inputKey').value.trim().toUpperCase();
+            const errorMsg = document.getElementById('errorMsg');
+            const hashEsperado = calcularHash(systemId);
+
+            if (inputKey === hashEsperado) {
+                localStorage.setItem('ancora_empresarial_activated', 'true');
+                verificarEstadoInicial(); // Atualiza a UI sem reload
+            } else {
+                errorMsg.style.display = 'block';
+                document.getElementById('inputKey').classList.add('is-invalid');
+            }
+        }
+
+        function calcularHash(id) {
+            const textoBase = id + SEGREDO_MESTRE;
+            let hash = 0;
+            for (let i = 0; i < textoBase.length; i++) {
+                const char = textoBase.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; 
+            }
+            const hex = Math.abs(hash).toString(16).toUpperCase();
+            return `KEY-${hex.padStart(8, '0')}`;
+        }
+
+        function copiarID() {
+            navigator.clipboard.writeText(systemId).then(() => {
+                const display = document.getElementById('systemIdDisplay');
+                display.classList.add('bg-success', 'text-white');
+                setTimeout(() => display.classList.remove('bg-success', 'text-white'), 500);
+            });
+        }
+    </script>
+</body>
+</html>

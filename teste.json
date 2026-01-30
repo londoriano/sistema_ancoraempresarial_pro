@@ -1,0 +1,248 @@
+[
+  {
+    "data": "2025-01-03",
+    "tipo": "Receita",
+    "valor": 12000.00,
+    "descricao": "Venda de serviços - Cliente Alpha",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-01-05",
+    "tipo": "Saida",
+    "valor": 680.00,
+    "descricao": "Aluguel escritório",
+    "categoria": "Estrutura básica",
+    "subcategoria": "Aluguel",
+    "natureza": "Despesa",
+    "comportamento": "Fixa",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-01-06",
+    "tipo": "Saida",
+    "valor": 210.00,
+    "descricao": "Internet",
+    "categoria": "Estrutura básica",
+    "subcategoria": "Internet",
+    "natureza": "Despesa",
+    "comportamento": "Fixa",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-01-08",
+    "tipo": "Saida",
+    "valor": 145.00,
+    "descricao": "Energia elétrica",
+    "categoria": "Estrutura básica",
+    "subcategoria": "Luz",
+    "natureza": "Despesa",
+    "comportamento": "Variável",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-01-10",
+    "tipo": "Saida",
+    "valor": 320.00,
+    "descricao": "Material de escritório",
+    "categoria": "Insumos administrativos",
+    "subcategoria": "Papelaria",
+    "natureza": "Despesa",
+    "comportamento": "Variável",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-01-12",
+    "tipo": "Saida",
+    "valor": 1800.00,
+    "descricao": "Salários equipe administrativa",
+    "categoria": "Recursos Humanos",
+    "subcategoria": "Salários",
+    "natureza": "Despesa",
+    "comportamento": "Fixa",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-01-15",
+    "tipo": "Saida",
+    "valor": 950.00,
+    "descricao": "Pró-labore sócios",
+    "categoria": "Rendimento Sócios/Pró-labore",
+    "subcategoria": "Pró-labore",
+    "natureza": "Despesa",
+    "comportamento": "Fixa",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-01-18",
+    "tipo": "Receita",
+    "valor": 8500.00,
+    "descricao": "Projeto financeiro - Cliente Beta",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-01-20",
+    "tipo": "Saida",
+    "valor": 420.00,
+    "descricao": "Serviço de contabilidade",
+    "categoria": "Prestadores de serviço",
+    "subcategoria": "Contabilidade",
+    "natureza": "Despesa",
+    "comportamento": "Fixa",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-01-25",
+    "tipo": "Saida",
+    "valor": 300.00,
+    "descricao": "Anúncios Google Ads",
+    "categoria": "Marketing e vendas",
+    "subcategoria": "Tráfego pago",
+    "natureza": "Despesa",
+    "comportamento": "Variável",
+    "status": "Realizado"
+  },
+
+  {
+    "data": "2025-02-01",
+    "tipo": "Receita",
+    "valor": 14000.00,
+    "descricao": "Consultoria mensal - Cliente Gama",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-02-05",
+    "tipo": "Saida",
+    "valor": 720.00,
+    "descricao": "Aluguel escritório",
+    "categoria": "Estrutura básica",
+    "subcategoria": "Aluguel",
+    "natureza": "Despesa",
+    "comportamento": "Fixa",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-02-07",
+    "tipo": "Saida",
+    "valor": 160.00,
+    "descricao": "Água",
+    "categoria": "Estrutura básica",
+    "subcategoria": "Água",
+    "natureza": "Despesa",
+    "comportamento": "Variável",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-02-10",
+    "tipo": "Saida",
+    "valor": 2300.00,
+    "descricao": "Compra de notebooks",
+    "categoria": "Máquinas e equipamentos",
+    "subcategoria": "Informática",
+    "natureza": "Despesa",
+    "comportamento": "Variável",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-02-14",
+    "tipo": "Receita",
+    "valor": 6000.00,
+    "descricao": "Serviço avulso - Diagnóstico financeiro",
+    "status": "Realizado"
+  },
+
+  {
+    "data": "2025-03-03",
+    "tipo": "Receita",
+    "valor": 15500.00,
+    "descricao": "Contrato anual - Cliente Delta",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-03-06",
+    "tipo": "Saida",
+    "valor": 520.00,
+    "descricao": "Combustível",
+    "categoria": "Transporte/frota/Automóveis",
+    "subcategoria": "Combustível",
+    "natureza": "Despesa",
+    "comportamento": "Variável",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-03-10",
+    "tipo": "Saida",
+    "valor": 380.00,
+    "descricao": "Manutenção veículo",
+    "categoria": "Transporte/frota/Automóveis",
+    "subcategoria": "Manutenção",
+    "natureza": "Despesa",
+    "comportamento": "Variável",
+    "status": "Provisionado"
+  },
+
+  {
+    "data": "2025-04-05",
+    "tipo": "Receita",
+    "valor": 9800.00,
+    "descricao": "Consultoria financeira - Cliente Épsilon",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-04-12",
+    "tipo": "Saida",
+    "valor": 260.00,
+    "descricao": "Treinamento equipe",
+    "categoria": "Treinamento e desenvolvimento",
+    "subcategoria": "Cursos",
+    "natureza": "Despesa",
+    "comportamento": "Variável",
+    "status": "Realizado"
+  },
+
+  {
+    "data": "2025-06-02",
+    "tipo": "Receita",
+    "valor": 13200.00,
+    "descricao": "Consultoria mensal - Cliente Zeta",
+    "status": "Realizado"
+  },
+  {
+    "data": "2025-06-08",
+    "tipo": "Saida",
+    "valor": 780.00,
+    "descricao": "Impostos Simples Nacional",
+    "categoria": "Impostos e taxas",
+    "subcategoria": "Simples Nacional",
+    "natureza": "Despesa",
+    "comportamento": "Variável",
+    "status": "Realizado"
+  },
+
+  {
+    "data": "2025-08-15",
+    "tipo": "Receita",
+    "valor": 17500.00,
+    "descricao": "Projeto estratégico - Cliente Ômega",
+    "status": "Realizado"
+  },
+
+  {
+    "data": "2025-10-10",
+    "tipo": "Saida",
+    "valor": 450.00,
+    "descricao": "Tarifas bancárias",
+    "categoria": "Banco(s)",
+    "subcategoria": "Tarifas",
+    "natureza": "Despesa",
+    "comportamento": "Fixa",
+    "status": "Realizado"
+  },
+
+  {
+    "data": "2025-12-20",
+    "tipo": "Receita",
+    "valor": 22000.00,
+    "descricao": "Pacote anual de consultoria",
+    "status": "Realizado"
+  }
+]

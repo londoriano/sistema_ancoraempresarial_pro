@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico Empresarial | Âncora</title>
+    <link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="lib/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
+        
+        /* Layout Sidebar */
+        #wrapper { display: flex; width: 100%; }
+        #sidebar-wrapper {
+            min-height: 100vh;
+            width: 250px;
+            margin-left: -250px;
+            background-color: #2c3e50;
+            transition: margin 0.25s ease-out;
+            position: fixed; z-index: 1000;
+        }
+        #sidebar-wrapper .sidebar-heading { padding: 1.5rem; font-size: 1.2rem; color: white; font-weight: bold; }
+        #sidebar-wrapper .list-group-item {
+            background-color: transparent; color: rgba(255,255,255,0.7); border: none; padding: 1rem 1.5rem;
+        }
+        #sidebar-wrapper .list-group-item:hover { background-color: rgba(255,255,255,0.1); color: white; }
+        #sidebar-wrapper .list-group-item.active { background-color: #1a252f; color: white; font-weight: bold; border-left: 4px solid #0dcaf0; }
+        #page-content-wrapper { width: 100%; margin-left: 0; transition: margin 0.25s ease-out; }
+        
+        /* Responsividade Sidebar */
+        @media (min-width: 768px) {
+            #sidebar-wrapper { margin-left: 0; }
+            #page-content-wrapper { margin-left: 250px; }
+        }
+
+        /* Notificação de Salvar (Footer) */
+        .unsaved-bar {
+            position: fixed; bottom: -100px; left: 0; right: 0;
+            background-color: #212529; color: white;
+            padding: 15px; z-index: 2000;
+            transition: bottom 0.3s ease-in-out;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.2);
+            display: flex; justify-content: space-between; align-items: center;
+            padding-left: 270px; /* Compensa a sidebar */
+        }
+        @media (max-width: 768px) { .unsaved-bar { padding-left: 20px; } }
+        .unsaved-bar.visible { bottom: 0; }
+
+        /* Estilos do Diagnóstico */
+        .section-title { font-size: 0.9rem; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #6c757d; margin-top: 1.5rem; border-bottom: 2px solid #e9ecef; padding-bottom: 5px; margin-bottom: 15px; }
+        .form-label { font-weight: 600; font-size: 0.9rem; color: #34495e; }
+        .card-header-custom { background: linear-gradient(45deg, #2c3e50, #34495e); color: white; }
+        
+        /* Utilitário de Cursor */
+        .cursor-pointer { cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="d-flex" id="wrapper">
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading"><i class="bi bi-building"></i> Âncora PRO</div>
+            <div class="list-group list-group-flush mt-3">
+                <a href="#" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-clipboard-data me-2"></i> Diagnóstico Inicial
+                </a>
+                
+                <a href="#" onclick="irPara('fluxo_caixa.html')" class="list-group-item list-group-item-action cursor-pointer">
+                    <i class="bi bi-cash-stack me-2"></i> Fluxo de Caixa
+                </a>
+                
+                <a href="#" class="list-group-item list-group-item-action text-muted" style="cursor: not-allowed;" title="Em breve">
+                    <i class="bi bi-graph-up-arrow me-2"></i> DRE Gerencial
+                </a>
+                <div class="mt-5 border-top border-secondary pt-3 px-3">
+                    <a href="clientes.html" class="btn btn-outline-light w-100 btn-sm">
+                        <i class="bi bi-arrow-left"></i> Voltar para Carteira
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-content-wrapper">
+            
+            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-3 sticky-top shadow-sm">
+                <button class="btn btn-primary d-md-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <span id="lastSaved" class="text-muted small me-2 fst-italic"></span>
+                    <button class="btn btn-success fw-bold" onclick="salvarDados()">
+                        <i class="bi bi-check-lg"></i> Salvar
+                    </button>
+                </div>
+            </nav>
+
+            <div class="container-fluid py-4 px-4">
+                
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h2 class="fw-bold text-dark mb-0" id="headerEmpresa">Carregando...</h2>
+                                <p class="text-muted mb-0" id="headerInfo">CNPJ: ...</p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <span class="badge bg-light text-dark border p-2" id="headerStatus">STATUS</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow border-0">
+                    <div class="card-header card-header-custom py-3">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-search"></i> Diagnóstico Inicial – Checkup Financeiro</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form id="formDiagnostico" oninput="marcarComoSujo()">
+                            
+                            <div class="section-title text-primary"><i class="bi bi-shop"></i> 1. Visão Geral do Negócio</div>
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <label class="form-label">Principal Produto/Serviço</label>
+                                    <input type="text" class="form-control" id="diag_produto" placeholder="O que a empresa vende principalmente?">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Tempo Operação</label>
+                                    <input type="text" class="form-control" id="diag_tempo" placeholder="Ex: 5 anos">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Porte Atual</label>
+                                    <select class="form-select" id="diag_porte">
+                                        <option value="">Selecione...</option>
+                                        <option value="MEI">MEI</option>
+                                        <option value="ME">ME</option>
+                                        <option value="EPP">EPP</option>
+                                        <option value="LTDA">LTDA / Outros</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="section-title text-success"><i class="bi bi-currency-dollar"></i> 2. Faturamento e Crescimento</div>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Faturamento Médio Mensal (6 meses)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="number" class="form-control" id="diag_faturamento" placeholder="0,00">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Tendência do Faturamento</label>
+                                    <select class="form-select" id="diag_tendencia">
+                                        <option value="Estagnado">Estagnado</option>
+                                        <option value="Crescendo">Crescendo</option>
+                                        <option value="Caindo">Caindo</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Sazonalidade Relevante?</label>
+                                    <input type="text" class="form-control" id="diag_sazonalidade" placeholder="Ex: Vende mais no Natal, Fraco em Jan...">
+                                </div>
+                            </div>
+
+                            <div class="section-title text-danger"><i class="bi bi-graph-down-arrow"></i> 3. Estrutura de Custos</div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Principais Custos Fixos</label>
+                                    <textarea class="form-control" id="diag_custos_desc" rows="2" placeholder="Aluguel, Folha, Software..."></textarea>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Custo Total Mensal (Estimado)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="number" class="form-control" id="diag_custo_total">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Mistura Contas PF/PJ?</label>
+                                    <select class="form-select" id="diag_mistura_contas">
+                                        <option value="Nao">Não, tudo separado</option>
+                                        <option value="Parcial">Parcialmente</option>
+                                        <option value="Sim">Sim, totalmente misturado</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="section-title text-success"><i class="bi bi-piggy-bank"></i> 4. Lucro e Margem</div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Lucro Líquido Real (Sobra no bolso)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">R$</span>
+                                        <input type="number" class="form-control" id="diag_lucro">
+                                    </div>
+                                    <div class="form-text">Se não souber, deixe em branco ou coloque 0.</div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Meta de Margem (%)</label>
+                                    <input type="text" class="form-control" id="diag_meta_margem" placeholder="Ex: Quero 20% de margem">
+                                </div>
+                            </div>
+
+                            <div class="section-title text-info"><i class="bi bi-wallet2"></i> 5. Caixa e Capital de Giro</div>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Situação do Fluxo de Caixa</label>
+                                    <select class="form-select" id="diag_situacao_caixa">
+                                        <option value="Sobra">Sobra (Azul)</option>
+                                        <option value="Aperta">Aperta (Empata)</option>
+                                        <option value="Falta">Falta (Vermelho)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Capital de Giro (Reserva)</label>
+                                    <select class="form-select" id="diag_capital_giro">
+                                        <option value="Inexistente">Inexistente (Vende almoço p/ pagar janta)</option>
+                                        <option value="1mes">Suficiente para 1 mês</option>
+                                        <option value="3meses">Suficiente para 3 meses</option>
+                                        <option value="Confortavel">Confortável (+6 meses)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="section-title text-danger"><i class="bi bi-bank"></i> 6. Endividamento</div>
+                            <div class="row g-3">
+                                <div class="col-md-8">
+                                    <label class="form-label">Descrição das Dívidas / Parcelamentos</label>
+                                    <textarea class="form-control" id="diag_dividas" rows="2" placeholder="Empréstimos, Antecipações, Impostos atrasados..."></textarea>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Atrasos Frequentes?</label>
+                                    <select class="form-select" id="diag_atrasos">
+                                        <option value="Nao">Não, tudo em dia</option>
+                                        <option value="Sim">Sim, frequentes</option>
+                                        <option value="Eventual">Eventualmente</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="section-title text-secondary"><i class="bi bi-laptop"></i> 7. Gestão Atual</div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label class="form-label">Como controla as finanças hoje?</label>
+                                    <select class="form-select" id="diag_metodo_controle">
+                                        <option value="Cabeca">Apenas na cabeça</option>
+                                        <option value="Caderno">Caderno / Papel</option>
+                                        <option value="Planilha">Planilhas (Excel/Sheets)</option>
+                                        <option value="Sistema">Sistema de Gestão (ERP)</option>
+                                        <option value="Contador">Deixo tudo com o contador</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+
+                <div class="text-center mt-5 mb-5 text-muted small">
+                    &copy; 2026 Âncora Consultoria Empresarial
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="unsaved-bar" id="unsavedBar">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-exclamation-circle-fill text-warning fs-4 me-3"></i>
+            <span>Você tem alterações não salvas!</span>
+        </div>
+        <div>
+            <button class="btn btn-outline-light btn-sm me-2" onclick="carregarDados()">Descartar</button>
+            <button class="btn btn-success fw-bold btn-sm" onclick="salvarDados()">Salvar Agora</button>
+        </div>
+    </div>
+
+    <script src="lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const DB_KEY = 'ancora_empresas';
+        const urlParams = new URLSearchParams(window.location.search);
+        const clientId = urlParams.get('id');
+        let isDirty = false;
+
+        // Toggle Sidebar Mobile
+        document.getElementById('sidebarToggle').addEventListener('click', function(e){
+            e.preventDefault();
+            document.body.classList.toggle('sb-sidenav-toggled');
+        });
+
+        // NAVEGAÇÃO ENTRE PÁGINAS DO CLIENTE
+        function irPara(pagina) {
+            if(isDirty) {
+                if(!confirm("Você tem dados não salvos. Deseja sair mesmo assim?")) return;
+            }
+            window.location.href = `${pagina}?id=${clientId}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if(!clientId) {
+                alert("ID da empresa não fornecido.");
+                window.location.href = 'clientes.html';
+                return;
+            }
+            carregarDados();
+        });
+
+        function getDB() {
+            return JSON.parse(localStorage.getItem(DB_KEY)) || [];
+        }
+
+        function carregarDados() {
+            const db = getDB();
+            const cliente = db.find(c => c.id === clientId);
+
+            if(!cliente) {
+                alert("Empresa não encontrada!");
+                window.location.href = 'clientes.html';
+                return;
+            }
+
+            // Preencher Header
+            document.getElementById('headerEmpresa').innerText = cliente.empresa;
+            document.getElementById('headerInfo').innerText = `CNPJ: ${cliente.cnpj || 'Não informado'} | Sócio: ${cliente.socio1}`;
+            document.getElementById('headerStatus').innerText = cliente.status || 'Lead';
+            
+            // Preencher Formulário (Se houver dados salvos)
+            const diag = cliente.diagnostico || {};
+            
+            // Mapeamento IDs -> Valores
+            const campos = [
+                'diag_produto', 'diag_tempo', 'diag_porte', 
+                'diag_faturamento', 'diag_tendencia', 'diag_sazonalidade',
+                'diag_custos_desc', 'diag_custo_total', 'diag_mistura_contas',
+                'diag_lucro', 'diag_meta_margem',
+                'diag_situacao_caixa', 'diag_capital_giro',
+                'diag_dividas', 'diag_atrasos', 'diag_metodo_controle'
+            ];
+
+            campos.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.value = diag[id] || '';
+            });
+
+            // Resetar estado de "sujo"
+            isDirty = false;
+            atualizarBarraUnsaved();
+        }
+
+        function salvarDados() {
+            const db = getDB();
+            const index = db.findIndex(c => c.id === clientId);
+            
+            if(index === -1) return;
+
+            // Criar objeto de diagnóstico
+            const diagnostico = {
+                diag_produto: document.getElementById('diag_produto').value,
+                diag_tempo: document.getElementById('diag_tempo').value,
+                diag_porte: document.getElementById('diag_porte').value,
+                
+                diag_faturamento: document.getElementById('diag_faturamento').value,
+                diag_tendencia: document.getElementById('diag_tendencia').value,
+                diag_sazonalidade: document.getElementById('diag_sazonalidade').value,
+                
+                diag_custos_desc: document.getElementById('diag_custos_desc').value,
+                diag_custo_total: document.getElementById('diag_custo_total').value,
+                diag_mistura_contas: document.getElementById('diag_mistura_contas').value,
+                
+                diag_lucro: document.getElementById('diag_lucro').value,
+                diag_meta_margem: document.getElementById('diag_meta_margem').value,
+                
+                diag_situacao_caixa: document.getElementById('diag_situacao_caixa').value,
+                diag_capital_giro: document.getElementById('diag_capital_giro').value,
+                
+                diag_dividas: document.getElementById('diag_dividas').value,
+                diag_atrasos: document.getElementById('diag_atrasos').value,
+                
+                diag_metodo_controle: document.getElementById('diag_metodo_controle').value,
+                
+                data_atualizacao: new Date().toISOString()
+            };
+
+            // Salvar no objeto principal
+            db[index].diagnostico = diagnostico;
+            
+            // Persistir
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+
+            // Feedback Visual
+            const btn = document.querySelector('button[onclick="salvarDados()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check-all"></i> Salvo!';
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-dark');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.classList.add('btn-success');
+                btn.classList.remove('btn-dark');
+            }, 2000);
+
+            document.getElementById('lastSaved').innerText = "Último salvo: " + new Date().toLocaleTimeString();
+            
+            isDirty = false;
+            atualizarBarraUnsaved();
+        }
+
+        function marcarComoSujo() {
+            if(!isDirty) {
+                isDirty = true;
+                atualizarBarraUnsaved();
+            }
+        }
+
+        function atualizarBarraUnsaved() {
+            const bar = document.getElementById('unsavedBar');
+            if(isDirty) {
+                bar.classList.add('visible');
+            } else {
+                bar.classList.remove('visible');
+            }
+        }
+
+        // Aviso antes de sair se houver dados não salvos
+        window.onbeforeunload = function() {
+            if (isDirty) return "Você tem alterações não salvas. Deseja sair mesmo assim?";
+        };
+    </script>
+</body>
+</html>
