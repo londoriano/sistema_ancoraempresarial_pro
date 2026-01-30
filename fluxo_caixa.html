@@ -73,6 +73,18 @@
         .nav-tabs .nav-link.active { font-weight: bold; border-top: 3px solid #2c3e50; }
         .badge-natureza { font-size: 0.65em; opacity: 0.8; margin-left: 5px; }
         .badge-receita { background-color: #198754; color: white; }
+
+        /* --- NOVO ESTILO: SUBCATEGORIAS TRANSPARENTES --- */
+        .tr-sub-opacity .col-valor {
+            opacity: 0.6; /* Deixa os valores mais claros/transparentes */
+            font-weight: 500; /* Reduz levemente o peso da fonte */
+        }
+        
+        /* Opcional: Efeito hover para focar quando passar o mouse */
+        .tr-sub-opacity:hover .col-valor {
+            opacity: 1;
+            transition: opacity 0.2s;
+        }
     </style>
 </head>
 <body>
@@ -376,10 +388,9 @@
                     totalAno += v;
                     const valFmt = v !== 0 ? v.toLocaleString('pt-BR',{minimumFractionDigits:2}) : '-';
                     
-                    // Tooltip Logic
+                    // Tooltip
                     let av1 = (bRec[i] > 0) ? ((v/bRec[i])*100).toFixed(1) : '0.0';
                     let av2 = (bDesp[i] > 0 && !isReceita) ? ((v/bDesp[i])*100).toFixed(1) : '0.0';
-                    
                     const tooltip = `Valor: R$ ${valFmt}\n% Receita: ${av1}%\n${!isReceita ? '% Despesa: '+av2+'%' : ''}`;
                     
                     cols += `<td class="col-valor" title="${tooltip}">${valFmt}</td>`;
@@ -387,7 +398,14 @@
             });
 
             const totalFmt = temValor ? totalAno.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '';
+            
             const tr = document.createElement('tr');
+            
+            // --- ALTERAÇÃO AQUI: Detecta subcategoria e adiciona transparência ---
+            if (classeCSS.includes('row-sub')) {
+                tr.classList.add('tr-sub-opacity');
+            }
+            
             tr.innerHTML = `<td class="sticky-col ${classeCSS}">${titulo}</td>${cols}<td class="col-valor bg-secondary text-white fw-bold">${totalFmt}</td>`;
             tbody.appendChild(tr);
         }
