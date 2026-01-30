@@ -1,248 +1,312 @@
 [
   {
-    "data": "2025-01-03",
+    "data": "2026-02-03",
     "tipo": "Receita",
-    "valor": 12000.00,
-    "descricao": "Venda de serviços - Cliente Alpha",
+    "valor": 8750.50,
+    "descricao": "Prestação de serviços - Consultoria",
+    "categoria": "Receita Operacional",
+    "subcategoria": "Consultoria",
     "status": "Realizado"
   },
   {
-    "data": "2025-01-05",
+    "data": "2026-02-05",
     "tipo": "Saida",
-    "valor": 680.00,
+    "valor": 1200.00,
     "descricao": "Aluguel escritório",
     "categoria": "Estrutura básica",
-    "subcategoria": "Aluguel",
+    "subcategoria": "Instalações",
     "natureza": "Despesa",
     "comportamento": "Fixa",
     "status": "Realizado"
   },
   {
-    "data": "2025-01-06",
+    "data": "2026-02-07",
     "tipo": "Saida",
-    "valor": 210.00,
-    "descricao": "Internet",
+    "valor": 450.00,
+    "descricao": "Internet fibra ótica",
     "categoria": "Estrutura básica",
-    "subcategoria": "Internet",
+    "subcategoria": "Comunicação",
     "natureza": "Despesa",
     "comportamento": "Fixa",
     "status": "Realizado"
   },
   {
-    "data": "2025-01-08",
-    "tipo": "Saida",
-    "valor": 145.00,
-    "descricao": "Energia elétrica",
-    "categoria": "Estrutura básica",
-    "subcategoria": "Luz",
-    "natureza": "Despesa",
-    "comportamento": "Variável",
+    "data": "2026-02-10",
+    "tipo": "Receita",
+    "valor": 15300.00,
+    "descricao": "Venda de produtos",
+    "categoria": "Receita Operacional",
+    "subcategoria": "Produtos",
     "status": "Realizado"
   },
   {
-    "data": "2025-01-10",
+    "data": "2026-02-12",
     "tipo": "Saida",
-    "valor": 320.00,
-    "descricao": "Material de escritório",
-    "categoria": "Insumos administrativos",
-    "subcategoria": "Papelaria",
-    "natureza": "Despesa",
-    "comportamento": "Variável",
-    "status": "Realizado"
-  },
-  {
-    "data": "2025-01-12",
-    "tipo": "Saida",
-    "valor": 1800.00,
-    "descricao": "Salários equipe administrativa",
-    "categoria": "Recursos Humanos",
+    "valor": 3500.00,
+    "descricao": "Salário funcionário 1",
+    "categoria": "Pessoal",
     "subcategoria": "Salários",
     "natureza": "Despesa",
     "comportamento": "Fixa",
+    "status": "Provisionado"
+  },
+  {
+    "data": "2026-02-12",
+    "tipo": "Saida",
+    "valor": 2800.00,
+    "descricao": "Salário funcionário 2",
+    "categoria": "Pessoal",
+    "subcategoria": "Salários",
+    "natureza": "Despesa",
+    "comportamento": "Fixa",
+    "status": "Provisionado"
+  },
+  {
+    "data": "2026-02-14",
+    "tipo": "Saida",
+    "valor": 680.00,
+    "descricao": "Materiais de escritório",
+    "categoria": "Operacional",
+    "subcategoria": "Material de consumo",
+    "natureza": "Despesa",
+    "comportamento": "Variável",
     "status": "Realizado"
   },
   {
-    "data": "2025-01-15",
+    "data": "2026-02-15",
     "tipo": "Saida",
-    "valor": 950.00,
-    "descricao": "Pró-labore sócios",
-    "categoria": "Rendimento Sócios/Pró-labore",
-    "subcategoria": "Pró-labore",
+    "valor": 320.00,
+    "descricao": "Conta de energia elétrica",
+    "categoria": "Estrutura básica",
+    "subcategoria": "Energia",
+    "natureza": "Despesa",
+    "comportamento": "Fixa",
+    "status": "Provisionado"
+  },
+  {
+    "data": "2026-02-17",
+    "tipo": "Receita",
+    "valor": 6200.00,
+    "descricao": "Serviços de manutenção",
+    "categoria": "Receita Operacional",
+    "subcategoria": "Serviços",
+    "status": "Realizado"
+  },
+  {
+    "data": "2026-02-18",
+    "tipo": "Saida",
+    "valor": 890.00,
+    "descricao": "Combustível veículos",
+    "categoria": "Operacional",
+    "subcategoria": "Transporte",
+    "natureza": "Despesa",
+    "comportamento": "Variável",
+    "status": "Realizado"
+  },
+  {
+    "data": "2026-02-19",
+    "tipo": "Saida",
+    "valor": 1500.00,
+    "descricao": "Publicidade online",
+    "categoria": "Marketing",
+    "subcategoria": "Mídia digital",
+    "natureza": "Despesa",
+    "comportamento": "Variável",
+    "status": "Realizado"
+  },
+  {
+    "data": "2026-02-20",
+    "tipo": "Receita",
+    "valor": 4750.00,
+    "descricao": "Comissão de vendas",
+    "categoria": "Receita Operacional",
+    "subcategoria": "Comissões",
+    "status": "Realizado"
+  },
+  {
+    "data": "2026-02-21",
+    "tipo": "Saida",
+    "valor": 250.00,
+    "descricao": "Conta de água",
+    "categoria": "Estrutura básica",
+    "subcategoria": "Água e saneamento",
     "natureza": "Despesa",
     "comportamento": "Fixa",
     "status": "Realizado"
   },
   {
-    "data": "2025-01-18",
-    "tipo": "Receita",
-    "valor": 8500.00,
-    "descricao": "Projeto financeiro - Cliente Beta",
+    "data": "2026-02-22",
+    "tipo": "Saida",
+    "valor": 1200.00,
+    "descricao": "Software de gestão - assinatura mensal",
+    "categoria": "Tecnologia",
+    "subcategoria": "Software",
+    "natureza": "Despesa",
+    "comportamento": "Fixa",
     "status": "Realizado"
   },
   {
-    "data": "2025-01-20",
+    "data": "2026-02-24",
+    "tipo": "Receita",
+    "valor": 22000.00,
+    "descricao": "Projeto especial - Implementação",
+    "categoria": "Receita Operacional",
+    "subcategoria": "Projetos",
+    "status": "Realizado"
+  },
+  {
+    "data": "2026-02-25",
     "tipo": "Saida",
-    "valor": 420.00,
-    "descricao": "Serviço de contabilidade",
-    "categoria": "Prestadores de serviço",
+    "valor": 3200.00,
+    "descricao": "Compra de equipamentos",
+    "categoria": "Investimento",
+    "subcategoria": "Equipamentos",
+    "natureza": "Investimento",
+    "comportamento": "Eventual",
+    "status": "Realizado"
+  },
+  {
+    "data": "2026-02-26",
+    "tipo": "Saida",
+    "valor": 580.00,
+    "descricao": "Manutenção veículo",
+    "categoria": "Operacional",
+    "subcategoria": "Manutenção",
+    "natureza": "Despesa",
+    "comportamento": "Eventual",
+    "status": "Realizado"
+  },
+  {
+    "data": "2026-02-27",
+    "tipo": "Receita",
+    "valor": 9500.00,
+    "descricao": "Treinamento corporativo",
+    "categoria": "Receita Operacional",
+    "subcategoria": "Cursos e treinamentos",
+    "status": "Realizado"
+  },
+  {
+    "data": "2026-02-28",
+    "tipo": "Saida",
+    "valor": 750.00,
+    "descricao": "Honorários contábeis",
+    "categoria": "Serviços terceirizados",
     "subcategoria": "Contabilidade",
     "natureza": "Despesa",
     "comportamento": "Fixa",
-    "status": "Realizado"
+    "status": "Provisionado"
   },
   {
-    "data": "2025-01-25",
+    "data": "2026-03-01",
     "tipo": "Saida",
-    "valor": 300.00,
-    "descricao": "Anúncios Google Ads",
-    "categoria": "Marketing e vendas",
-    "subcategoria": "Tráfego pago",
-    "natureza": "Despesa",
-    "comportamento": "Variável",
-    "status": "Realizado"
-  },
-
-  {
-    "data": "2025-02-01",
-    "tipo": "Receita",
-    "valor": 14000.00,
-    "descricao": "Consultoria mensal - Cliente Gama",
-    "status": "Realizado"
-  },
-  {
-    "data": "2025-02-05",
-    "tipo": "Saida",
-    "valor": 720.00,
-    "descricao": "Aluguel escritório",
-    "categoria": "Estrutura básica",
-    "subcategoria": "Aluguel",
+    "valor": 420.00,
+    "descricao": "Seguro empresarial",
+    "categoria": "Operacional",
+    "subcategoria": "Seguros",
     "natureza": "Despesa",
     "comportamento": "Fixa",
-    "status": "Realizado"
+    "status": "Provisionado"
   },
   {
-    "data": "2025-02-07",
+    "data": "2026-03-03",
+    "tipo": "Receita",
+    "valor": 11200.00,
+    "descricao": "Venda de licenças",
+    "categoria": "Receita Operacional",
+    "subcategoria": "Licenciamento",
+    "status": "Provisionado"
+  },
+  {
+    "data": "2026-03-05",
     "tipo": "Saida",
-    "valor": 160.00,
-    "descricao": "Água",
+    "valor": 1850.00,
+    "descricao": "Vale-transporte e benefícios",
+    "categoria": "Pessoal",
+    "subcategoria": "Benefícios",
+    "natureza": "Despesa",
+    "comportamento": "Fixa",
+    "status": "Provisionado"
+  },
+  {
+    "data": "2026-03-06",
+    "tipo": "Saida",
+    "valor": 980.00,
+    "descricao": "Telefonia móvel corporativa",
     "categoria": "Estrutura básica",
-    "subcategoria": "Água",
+    "subcategoria": "Comunicação",
     "natureza": "Despesa",
-    "comportamento": "Variável",
-    "status": "Realizado"
+    "comportamento": "Fixa",
+    "status": "Provisionado"
   },
   {
-    "data": "2025-02-10",
-    "tipo": "Saida",
-    "valor": 2300.00,
-    "descricao": "Compra de notebooks",
-    "categoria": "Máquinas e equipamentos",
-    "subcategoria": "Informática",
-    "natureza": "Despesa",
-    "comportamento": "Variável",
-    "status": "Realizado"
-  },
-  {
-    "data": "2025-02-14",
+    "data": "2026-03-08",
     "tipo": "Receita",
-    "valor": 6000.00,
-    "descricao": "Serviço avulso - Diagnóstico financeiro",
-    "status": "Realizado"
-  },
-
-  {
-    "data": "2025-03-03",
-    "tipo": "Receita",
-    "valor": 15500.00,
-    "descricao": "Contrato anual - Cliente Delta",
-    "status": "Realizado"
+    "valor": 7300.00,
+    "descricao": "Suporte técnico mensal",
+    "categoria": "Receita Operacional",
+    "subcategoria": "Serviços",
+    "status": "Provisionado"
   },
   {
-    "data": "2025-03-06",
+    "data": "2026-03-10",
     "tipo": "Saida",
-    "valor": 520.00,
-    "descricao": "Combustível",
-    "categoria": "Transporte/frota/Automóveis",
-    "subcategoria": "Combustível",
+    "valor": 2100.00,
+    "descricao": "Treinamento equipe",
+    "categoria": "Pessoal",
+    "subcategoria": "Capacitação",
     "natureza": "Despesa",
-    "comportamento": "Variável",
-    "status": "Realizado"
+    "comportamento": "Eventual",
+    "status": "Provisionado"
   },
   {
-    "data": "2025-03-10",
+    "data": "2026-03-11",
     "tipo": "Saida",
-    "valor": 380.00,
-    "descricao": "Manutenção veículo",
-    "categoria": "Transporte/frota/Automóveis",
-    "subcategoria": "Manutenção",
+    "valor": 550.00,
+    "descricao": "Licenças de software",
+    "categoria": "Tecnologia",
+    "subcategoria": "Licenças",
+    "natureza": "Despesa",
+    "comportamento": "Fixa",
+    "status": "Provisionado"
+  },
+  {
+    "data": "2026-03-12",
+    "tipo": "Receita",
+    "valor": 18500.00,
+    "descricao": "Consultoria estratégica",
+    "categoria": "Receita Operacional",
+    "subcategoria": "Consultoria",
+    "status": "Provisionado"
+  },
+  {
+    "data": "2026-03-14",
+    "tipo": "Saida",
+    "valor": 1320.00,
+    "descricao": "Marketing impresso",
+    "categoria": "Marketing",
+    "subcategoria": "Material gráfico",
     "natureza": "Despesa",
     "comportamento": "Variável",
     "status": "Provisionado"
   },
-
   {
-    "data": "2025-04-05",
+    "data": "2026-03-15",
     "tipo": "Receita",
-    "valor": 9800.00,
-    "descricao": "Consultoria financeira - Cliente Épsilon",
-    "status": "Realizado"
+    "valor": 5800.00,
+    "descricao": "Mensalidades clientes recorrentes",
+    "categoria": "Receita Operacional",
+    "subcategoria": "Recorrência",
+    "status": "Provisionado"
   },
   {
-    "data": "2025-04-12",
+    "data": "2026-03-17",
     "tipo": "Saida",
-    "valor": 260.00,
-    "descricao": "Treinamento equipe",
-    "categoria": "Treinamento e desenvolvimento",
-    "subcategoria": "Cursos",
+    "valor": 890.00,
+    "descricao": "Despesas bancárias e taxas",
+    "categoria": "Financeiro",
+    "subcategoria": "Taxas bancárias",
     "natureza": "Despesa",
     "comportamento": "Variável",
-    "status": "Realizado"
-  },
-
-  {
-    "data": "2025-06-02",
-    "tipo": "Receita",
-    "valor": 13200.00,
-    "descricao": "Consultoria mensal - Cliente Zeta",
-    "status": "Realizado"
-  },
-  {
-    "data": "2025-06-08",
-    "tipo": "Saida",
-    "valor": 780.00,
-    "descricao": "Impostos Simples Nacional",
-    "categoria": "Impostos e taxas",
-    "subcategoria": "Simples Nacional",
-    "natureza": "Despesa",
-    "comportamento": "Variável",
-    "status": "Realizado"
-  },
-
-  {
-    "data": "2025-08-15",
-    "tipo": "Receita",
-    "valor": 17500.00,
-    "descricao": "Projeto estratégico - Cliente Ômega",
-    "status": "Realizado"
-  },
-
-  {
-    "data": "2025-10-10",
-    "tipo": "Saida",
-    "valor": 450.00,
-    "descricao": "Tarifas bancárias",
-    "categoria": "Banco(s)",
-    "subcategoria": "Tarifas",
-    "natureza": "Despesa",
-    "comportamento": "Fixa",
-    "status": "Realizado"
-  },
-
-  {
-    "data": "2025-12-20",
-    "tipo": "Receita",
-    "valor": 22000.00,
-    "descricao": "Pacote anual de consultoria",
-    "status": "Realizado"
+    "status": "Provisionado"
   }
 ]

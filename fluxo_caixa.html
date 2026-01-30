@@ -116,6 +116,12 @@
                 <h5 class="ms-3 mb-0 fw-bold text-secondary" id="headerEmpresa">Carregando...</h5>
                 <div class="ms-auto d-flex align-items-center gap-2">
                     
+                    <div class="d-flex align-items-center bg-danger bg-opacity-10 border border-danger rounded px-2 py-1 me-2">
+                        <button class="btn btn-link text-danger btn-sm p-0 fw-bold text-decoration-none" onclick="resetarFluxoTotal()" title="Apagar todos os lançamentos">
+                            <i class="bi bi-trash3-fill"></i> Resetar
+                        </button>
+                    </div>
+
                     <div class="d-flex align-items-center bg-light border rounded px-2 py-1">
                         <button class="btn btn-link text-secondary btn-sm p-0 me-2" onclick="abrirModalInfoJson()" title="Ver Modelo JSON">
                             <i class="bi bi-info-circle-fill fs-5"></i>
@@ -154,9 +160,9 @@
                         </div>
 
                         <div class="row g-3 mb-4">
-                            <div class="col-md-4"><div class="card shadow-sm border-start border-5 border-success p-3"><h6 class="text-success small fw-bold">RECEITAS</h6><h3 class="fw-bold mb-0 text-success" id="totalReceitas">R$ 0,00</h3></div></div>
-                            <div class="col-md-4"><div class="card shadow-sm border-start border-5 border-danger p-3"><h6 class="text-danger small fw-bold">DESPESAS</h6><h3 class="fw-bold mb-0 text-danger" id="totalSaidas">R$ 0,00</h3></div></div>
-                            <div class="col-md-4"><div class="card shadow-sm border-start border-5 border-primary p-3"><h6 class="text-primary small fw-bold">SALDO</h6><h3 class="fw-bold mb-0" id="saldoMes">R$ 0,00</h3></div></div>
+                            <div class="col-md-4"><div class="card shadow-sm border-start border-1 border-success p-3"><h6 class="text-success small">RECEITAS</h6><h3 class="mb-0 text-success" id="totalReceitas">R$ 0,00</h3></div></div>
+                            <div class="col-md-4"><div class="card shadow-sm border-start border-1 border-danger p-3"><h6 class="text-danger small">DESPESAS</h6><h3 class="mb-0 text-danger" id="totalSaidas">R$ 0,00</h3></div></div>
+                            <div class="col-md-4"><div class="card shadow-sm border-start border-1 border-primary p-3"><h6 class="text-primary small">SALDO</h6><h3 class="mb-0" id="saldoMes">R$ 0,00</h3></div></div>
                         </div>
 
                         <div class="card shadow-sm border-0">
@@ -252,7 +258,7 @@
         let tipoConfigAtual = 'Receita';
 
         const DEFAULT_REC = ["Receita Operacional", "Receita Recorrente", "Receita Financeira", "Receita Patrimonial", "Receita Não Operacional", "Outras Receitas"];
-        const DEFAULT_SAI = ["Insumos administrativos", "Estrutura básica", "Impostos e taxas", "Recursos Humanos", "Rendimento Sócios/Pró-labore", "Prestadores de serviço", "Banco(s)", "Matéria prima", "Marketing e vendas", "Treinamento e desenvolvimento", "Máquinas e equipamentos", "Transporte/frota/Automóveis"];
+        const DEFAULT_SAI = ["Insumos administrativos", "Estrutura básica", "Impostos e taxas", "Recursos Humanos", "Rendimento Sócios/Pró-labore", "Prestadores de serviço", "Banco(s)", "Matéria prima", "Marketing e vendas", "Treinamento e desenvolvimento", "Máquinas e equipamentos", "Transporte/Frota"];
 
         document.addEventListener('DOMContentLoaded', () => {
             if(!clientId) { alert("Erro de ID"); return; }
@@ -601,6 +607,39 @@
             document.getElementById('totalSaidas').innerText = s.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
             const sal=r-s; document.getElementById('saldoMes').innerText = sal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
             document.getElementById('saldoMes').className = `fw-bold mb-0 ${sal>=0?'text-success':'text-danger'}`;
+        }
+
+        // --- FUNÇÃO DE RESET TOTAL (SEGURANÇA MÁXIMA) ---
+        function resetarFluxoTotal() {
+            // 1. Primeira barreira: Confirmação de intenção
+            if(!confirm("⚠️ PERIGO EXTREMO ⚠️\n\nVocê está prestes a apagar TODO o histórico financeiro desta empresa (todos os anos).\nEssa ação é irreversível e não pode ser desfeita.\n\nDeseja realmente continuar?")) {
+                return;
+            }
+
+            // 2. Segunda barreira: Senha Administrativa
+            const senha = prompt("Para confirmar a exclusão total da base de dados, digite a senha de segurança:");
+
+            if (senha === "Nimbus27@9") {
+                const db = getDB();
+                const index = db.findIndex(c => c.id === clientId);
+                
+                if (index !== -1) {
+                    // Mantém as configurações de categorias, apaga apenas os lançamentos
+                    db[index].financeiro = []; 
+                    
+                    saveDB(db);
+                    
+                    alert("✅ SUCESSO: Todos os lançamentos financeiros foram apagados.");
+                    
+                    // Atualiza a tela imediatamente
+                    carregarLancamentos();
+                    if(document.getElementById('view-anual').classList.contains('active')) {
+                        carregarVisaoAnual();
+                    }
+                }
+            } else if (senha !== null) { // Só avisa se não for cancelamento
+                alert("⛔ ERRO: Senha incorreta. Nenhuma alteração foi feita.");
+            }
         }
     </script>
 </body>
