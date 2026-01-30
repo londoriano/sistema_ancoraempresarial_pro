@@ -9,7 +9,7 @@
     <style>
         body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
         
-        /* Layout */
+        /* Layout Sidebar */
         #wrapper { display: flex; width: 100%; }
         #sidebar-wrapper {
             min-height: 100vh; width: 250px; margin-left: -250px;
@@ -23,29 +23,53 @@
         #page-content-wrapper { width: 100%; margin-left: 0; transition: margin 0.25s ease-out; }
         @media (min-width: 768px) { #sidebar-wrapper { margin-left: 0; } #page-content-wrapper { margin-left: 250px; } }
 
-        /* --- PLANILHA DRE --- */
+        /* --- PLANILHA DRE (VISUAL LIMPO) --- */
         .table-responsive-dre {
             width: 100%; max-height: 80vh; overflow: auto; background: white;
             border: 1px solid #dee2e6; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative;
         }
-        .table-dre { font-size: 0.7rem; border-collapse: separate; border-spacing: 0; min-width: 2500px; }
-        .table-dre th, .table-dre td { padding: 4px 6px; vertical-align: middle; white-space: nowrap; border-right: 1px solid #e9ecef; border-bottom: 1px solid #e9ecef; }
-        .sticky-col { position: sticky; left: 0; z-index: 5; background-color: #f8f9fa; border-right: 2px solid #ced4da !important; width: 280px; min-width: 280px; max-width: 280px; overflow: hidden; text-overflow: ellipsis; }
-        .table-dre thead tr:nth-child(1) th { position: sticky; top: 0; z-index: 4; }
-        .table-dre thead tr:nth-child(2) th { position: sticky; top: 29px; z-index: 4; } 
-        .table-dre thead tr th.sticky-col { z-index: 6; background-color: #e9ecef; }
-        .dre-header-mes { text-align: center; font-weight: bold; background-color: #e9ecef; border-bottom: 2px solid #adb5bd; }
-        .dre-sub-header { font-size: 0.65rem; text-align: center; color: #495057; background-color: #f1f3f5; }
-        .col-valor { text-align: right; width: 90px; font-family: 'Consolas', monospace; font-weight: 600; }
-        .col-pct { text-align: right; width: 45px; font-size: 0.65rem; color: #6c757d; background-color: #fdfdfd; }
-        .col-pct-desp { background-color: #fff5f5; color: #d63384; } 
-        .row-grupo { background-color: #212529 !important; color: white !important; font-weight: bold; text-transform: uppercase; padding-top: 8px; padding-bottom: 8px; }
-        .row-cat { background-color: #e9ecef; font-weight: 700; color: #212529; }
+        .table-dre { 
+            font-size: 0.75rem; 
+            border-collapse: separate; 
+            border-spacing: 0; 
+            width: 100%; /* Ocupa largura total */
+            min-width: 1200px; /* Garante scroll em telas pequenas */
+        }
+        .table-dre th, .table-dre td { 
+            padding: 6px 8px; vertical-align: middle; white-space: nowrap; 
+            border-right: 1px solid #e9ecef; border-bottom: 1px solid #e9ecef; 
+        }
+        
+        /* Coluna Fixa */
+        .sticky-col { 
+            position: sticky; left: 0; z-index: 5; background-color: #f8f9fa; 
+            border-right: 2px solid #ced4da !important; width: 280px; min-width: 280px; 
+            overflow: hidden; text-overflow: ellipsis;
+        }
+        .table-dre thead tr th { position: sticky; top: 0; z-index: 4; background-color: #e9ecef; border-bottom: 2px solid #adb5bd; }
+        .table-dre thead tr th.sticky-col { z-index: 6; } /* Cruzamento */
+
+        /* Colunas de Dados */
+        .col-valor { 
+            text-align: right; font-family: 'Consolas', monospace; font-weight: 600; 
+            cursor: help; /* Indica que tem tooltip */
+        }
+        
+        /* Linhas Hierárquicas */
+        .row-grupo { background-color: #212529 !important; color: white !important; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .row-cat { background-color: #e9ecef; font-weight: 800; color: #212529; text-transform: uppercase; }
         .row-sub { background-color: #fff; color: #495057; }
+        .row-cat-total { background-color: #f8f9fa; font-weight: 700; color: #495057; border-top: 1px solid #dee2e6; font-style: italic; }
         .row-total-saidas { background-color: #ced4da !important; font-weight: 800; border-top: 2px solid #6c757d; }
         .row-saldo { background-color: #2c3e50 !important; color: white !important; font-weight: 900; font-size: 0.9rem; border-top: 3px double white; }
-        .val-pos { color: #198754; } .val-neg { color: #dc3545; }
-        .indent-cat { padding-left: 15px !important; } .indent-sub { padding-left: 35px !important; font-style: italic; }
+
+        .val-pos { color: #198754; } 
+        .val-neg { color: #dc3545; }
+        .indent-cat { padding-left: 10px !important; }
+        .indent-sub { padding-left: 30px !important; }
+        .indent-total { padding-left: 10px !important; text-align: right; }
+
+        /* Outros */
         .nav-tabs .nav-link.active { font-weight: bold; border-top: 3px solid #2c3e50; }
         .badge-natureza { font-size: 0.65em; opacity: 0.8; margin-left: 5px; }
         .badge-receita { background-color: #198754; color: white; }
@@ -110,6 +134,7 @@
                 </ul>
 
                 <div class="tab-content">
+                    
                     <div class="tab-pane fade show active" id="view-extrato">
                         <div class="d-flex justify-content-end mb-3 align-items-center gap-2">
                             <label class="fw-bold text-muted small">Mês:</label>
@@ -137,50 +162,43 @@
 
                     <div class="tab-pane fade" id="view-anual">
                         <div class="card shadow-sm border-0">
-                            <div class="card-header bg-white py-2 d-flex justify-content-between">
-                                <button class="btn btn-sm btn-outline-secondary" onclick="mudarAno(-1)">< Anterior</button>
-                                <h5 class="m-0 fw-bold" id="anoVisaoAnual">2026</h5>
-                                <button class="btn btn-sm btn-outline-secondary" onclick="mudarAno(1)">Próximo ></button>
+                            <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="mudarAno(-1)"><i class="bi bi-chevron-left"></i> Anterior</button>
+                                    <span class="mx-3 fw-bold fs-5" id="anoVisaoAnual">2026</span>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="mudarAno(1)">Próximo <i class="bi bi-chevron-right"></i></button>
+                                </div>
+                                <button class="btn btn-success btn-sm fw-bold" onclick="exportarDRECSV()">
+                                    <i class="bi bi-file-earmark-spreadsheet"></i> Baixar CSV Completo
+                                </button>
                             </div>
                             
                             <div class="table-responsive-dre">
                                 <table class="table-dre">
                                     <thead>
                                         <tr>
-                                            <th class="sticky-col dre-header-mes">DEMONSTRATIVO</th>
-                                            <th colspan="3" class="dre-header-mes">JAN</th>
-                                            <th colspan="3" class="dre-header-mes">FEV</th>
-                                            <th colspan="3" class="dre-header-mes">MAR</th>
-                                            <th colspan="3" class="dre-header-mes">ABR</th>
-                                            <th colspan="3" class="dre-header-mes">MAI</th>
-                                            <th colspan="3" class="dre-header-mes">JUN</th>
-                                            <th colspan="3" class="dre-header-mes">JUL</th>
-                                            <th colspan="3" class="dre-header-mes">AGO</th>
-                                            <th colspan="3" class="dre-header-mes">SET</th>
-                                            <th colspan="3" class="dre-header-mes">OUT</th>
-                                            <th colspan="3" class="dre-header-mes">NOV</th>
-                                            <th colspan="3" class="dre-header-mes">DEZ</th>
-                                            <th colspan="3" class="dre-header-mes bg-dark text-white">TOTAL</th>
-                                        </tr>
-                                        <tr>
-                                            <th class="sticky-col dre-sub-header text-start ps-3">Conta / Categoria</th>
-                                            <th class="dre-sub-header">R$</th><th class="dre-sub-header" title="% Receita">%R</th><th class="dre-sub-header" title="% Despesa Total">%D</th>
-                                            <th class="dre-sub-header">R$</th><th class="dre-sub-header">%R</th><th class="dre-sub-header">%D</th>
-                                            <th class="dre-sub-header">R$</th><th class="dre-sub-header">%R</th><th class="dre-sub-header">%D</th>
-                                            <th class="dre-sub-header">R$</th><th class="dre-sub-header">%R</th><th class="dre-sub-header">%D</th>
-                                            <th class="dre-sub-header">R$</th><th class="dre-sub-header">%R</th><th class="dre-sub-header">%D</th>
-                                            <th class="dre-sub-header">R$</th><th class="dre-sub-header">%R</th><th class="dre-sub-header">%D</th>
-                                            <th class="dre-sub-header">R$</th><th class="dre-sub-header">%R</th><th class="dre-sub-header">%D</th>
-                                            <th class="dre-sub-header">R$</th><th class="dre-sub-header">%R</th><th class="dre-sub-header">%D</th>
-                                            <th class="dre-sub-header">R$</th><th class="dre-sub-header">%R</th><th class="dre-sub-header">%D</th>
-                                            <th class="dre-sub-header">R$</th><th class="dre-sub-header">%R</th><th class="dre-sub-header">%D</th>
-                                            <th class="dre-sub-header">R$</th><th class="dre-sub-header">%R</th><th class="dre-sub-header">%D</th>
-                                            <th class="dre-sub-header">R$</th><th class="dre-sub-header">%R</th><th class="dre-sub-header">%D</th>
-                                            <th class="dre-sub-header bg-secondary text-white">R$</th><th class="dre-sub-header bg-secondary text-white">%R</th><th class="dre-sub-header bg-secondary text-white">%D</th>
+                                            <th class="sticky-col text-start ps-3">CONTA / CATEGORIA</th>
+                                            <th class="text-center">JAN</th>
+                                            <th class="text-center">FEV</th>
+                                            <th class="text-center">MAR</th>
+                                            <th class="text-center">ABR</th>
+                                            <th class="text-center">MAI</th>
+                                            <th class="text-center">JUN</th>
+                                            <th class="text-center">JUL</th>
+                                            <th class="text-center">AGO</th>
+                                            <th class="text-center">SET</th>
+                                            <th class="text-center">OUT</th>
+                                            <th class="text-center">NOV</th>
+                                            <th class="text-center">DEZ</th>
+                                            <th class="text-center bg-dark text-white">TOTAL</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="tabelaAnualBody"></tbody>
+                                    <tbody id="tabelaAnualBody">
+                                        </tbody>
                                 </table>
+                            </div>
+                            <div class="card-footer bg-light small text-muted">
+                                <i class="bi bi-info-circle-fill text-primary"></i> Passe o mouse sobre os valores para ver a Análise Vertical (% Receita e % Despesa).
                             </div>
                         </div>
                     </div>
@@ -192,79 +210,22 @@
     <div class="modal fade" id="modalLancamento" tabindex="-1">
         <div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-dark text-white"><h5 class="modal-title">Novo Lançamento</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="formLancamento" onsubmit="salvarLancamento(event)"><div class="btn-group w-100 mb-3"><input type="radio" class="btn-check" name="tipoMov" id="tipoReceita" value="Receita" onchange="toggleFormTipo()" checked><label class="btn btn-outline-success" for="tipoReceita">Entrada</label><input type="radio" class="btn-check" name="tipoMov" id="tipoSaida" value="Saida" onchange="toggleFormTipo()"><label class="btn btn-outline-danger" for="tipoSaida">Saída</label></div><div class="row g-2 mb-3"><div class="col-6"><input type="date" id="lancData" class="form-control" required></div><div class="col-6"><input type="number" step="0.01" id="lancValor" class="form-control" required placeholder="R$"></div></div><div class="mb-3"><label>Categoria</label><select id="lancCategoria" class="form-select" onchange="carregarSubcategoriasSelect()" required></select></div><div class="mb-3"><label>Subcategoria</label><select id="lancSubcategoria" class="form-select" disabled required></select></div><div class="mb-3"><input type="text" id="lancDescricao" class="form-control" placeholder="Descrição"></div><div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" id="lancStatusRealizado" checked><label class="form-check-label">Realizado</label></div><button type="submit" class="btn btn-success w-100">SALVAR</button></form></div></div></div>
     </div>
-
+    
     <div class="modal fade" id="modalConfig" tabindex="-1">
-        <div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header bg-secondary text-white"><h5 class="modal-title">Categorias</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body">
-            <ul class="nav nav-tabs mb-3" id="configTabs">
-                <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#cfg-panel" onclick="setTipoConfig('Receita')">Receitas</button></li>
-                <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#cfg-panel" onclick="setTipoConfig('Saida')">Despesas</button></li>
-            </ul>
-            <div class="row">
-                <div class="col-md-5 border-end">
-                    <div class="input-group mb-2"><input type="text" id="novaCatNome" class="form-control form-control-sm"><button class="btn btn-primary btn-sm" onclick="addCategoria()">+</button></div>
-                    <div class="list-group overflow-auto" style="max-height:300px" id="listaCategoriasConfig"></div>
-                </div>
-                <div class="col-md-7">
-                    <div id="painelSubcat" class="d-none">
-                        <h6 id="catSelecionadaNome" class="fw-bold text-primary"></h6>
-                        <div class="card bg-light p-2 mb-3">
-                            <input type="text" id="novaSubNome" class="form-control form-control-sm mb-2" placeholder="Nome Sub">
-                            <div class="row g-2" id="divClassificacaoSub"><div class="col-6"><select id="novaSubNatureza" class="form-select form-select-sm"><option value="Custo">Custo</option><option value="Despesa">Despesa</option></select></div><div class="col-6"><select id="novaSubComportamento" class="form-select form-select-sm"><option value="Variavel">Variável</option><option value="Fixa">Fixa</option></select></div></div>
-                            <button class="btn btn-success btn-sm w-100 mt-2" onclick="addSubcategoria()">Adicionar Sub</button>
-                        </div>
-                        <ul class="list-group list-group-flush" id="listaSubcategoriasConfig"></ul>
-                    </div>
-                    <div id="painelSubcatVazio" class="text-center text-muted mt-5">Selecione uma categoria.</div>
-                </div>
-            </div>
-        </div></div></div>
+        <div class="modal-dialog modal-lg"><div class="modal-content"><div class="modal-header bg-secondary text-white"><h5 class="modal-title">Categorias</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><ul class="nav nav-tabs mb-3" id="configTabs"><li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#cfg-panel" onclick="setTipoConfig('Receita')">Receitas</button></li><li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#cfg-panel" onclick="setTipoConfig('Saida')">Despesas</button></li></ul><div class="row"><div class="col-md-5 border-end"><div class="input-group mb-2"><input type="text" id="novaCatNome" class="form-control form-control-sm"><button class="btn btn-primary btn-sm" onclick="addCategoria()">+</button></div><div class="list-group overflow-auto" style="max-height:300px" id="listaCategoriasConfig"></div></div><div class="col-md-7"><div id="painelSubcat" class="d-none"><h6 id="catSelecionadaNome" class="fw-bold text-primary"></h6><div class="card bg-light p-2 mb-3"><input type="text" id="novaSubNome" class="form-control form-control-sm mb-2" placeholder="Nome Sub"><div class="row g-2" id="divClassificacaoSub"><div class="col-6"><select id="novaSubNatureza" class="form-select form-select-sm"><option value="Custo">Custo</option><option value="Despesa">Despesa</option></select></div><div class="col-6"><select id="novaSubComportamento" class="form-select form-select-sm"><option value="Variavel">Variável</option><option value="Fixa">Fixa</option></select></div></div><button class="btn btn-success btn-sm w-100 mt-2" onclick="addSubcategoria()">Adicionar Sub</button></div><ul class="list-group list-group-flush" id="listaSubcategoriasConfig"></ul></div><div id="painelSubcatVazio" class="text-center text-muted mt-5">Selecione uma categoria.</div></div></div></div></div></div>
     </div>
 
     <div class="modal fade" id="modalInfoJson" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
-                <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title"><i class="bi bi-file-earmark-code"></i> Modelo de Importação JSON</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body bg-dark text-light p-4 font-monospace small">
-                    <div class="alert alert-secondary text-dark border-0 mb-3">
-                        <i class="bi bi-lightbulb-fill text-warning"></i> <strong>Atenção:</strong> As categorias devem corresponder exatamente às existentes no sistema para que o DRE funcione corretamente.
-                    </div>
-                    
-                    <p class="text-success mb-1">// Exemplo de Estrutura do Arquivo .json</p>
-<pre class="text-light m-0 border border-secondary p-3 rounded" style="background: #1a1d20;">
-[
-  {
-    <span class="text-muted">// LANÇAMENTO DE RECEITA</span>
-    "data": "2026-02-10",
-    "tipo": "Receita",
-    "valor": 12500.00,
-    "descricao": "Venda de Consultoria",
-    "categoria": "Receita Operacional",  <span class="text-warning">// Use categorias padrão</span>
-    "subcategoria": "Projeto Âncora",
-    "status": "Realizado"
-  },
-  {
-    <span class="text-muted">// LANÇAMENTO DE DESPESA</span>
-    "data": "2026-02-15",
-    "tipo": "Saida",
-    "valor": 300.00,
-    "descricao": "Energia Elétrica",
-    "categoria": "Estrutura básica",
-    "subcategoria": "Luz",
-    "natureza": "Despesa",        <span class="text-warning">// "Custo" ou "Despesa"</span>
-    "comportamento": "Fixa",      <span class="text-warning">// "Fixa" ou "Variavel"</span>
-    "status": "Provisionado"
-  }
+                <div class="modal-header bg-info text-white"><h5 class="modal-title">Modelo JSON</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body bg-dark text-light p-3 font-monospace small">
+<pre class="text-light m-0">[
+  { "data": "2026-02-10", "tipo": "Receita", "valor": 12500.00, "descricao": "Venda", "categoria": "Receita Operacional", "subcategoria": "Serviços", "status": "Realizado" },
+  { "data": "2026-02-15", "tipo": "Saida", "valor": 300.00, "descricao": "Luz", "categoria": "Estrutura básica", "subcategoria": "Energia", "natureza": "Despesa", "comportamento": "Fixa", "status": "Provisionado" }
 ]</pre>
                 </div>
-                <div class="modal-footer bg-dark border-top border-secondary">
-                    <button class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Fechar</button>
-                    <button class="btn btn-primary btn-sm fw-bold" onclick="triggerImport()">
-                        <i class="bi bi-upload"></i> Selecionar Arquivo Agora
-                    </button>
-                </div>
+                <div class="modal-footer bg-dark border-top border-secondary"><button class="btn btn-primary btn-sm" onclick="triggerImport()">Selecionar Arquivo</button></div>
             </div>
         </div>
     </div>
@@ -278,12 +239,11 @@
         let categoriaEmEdicao = null;
         let tipoConfigAtual = 'Receita';
 
-        // --- CONSTANTES DE INICIALIZAÇÃO ---
         const DEFAULT_REC = ["Receita Operacional", "Receita Recorrente", "Receita Financeira", "Receita Patrimonial", "Receita Não Operacional", "Outras Receitas"];
         const DEFAULT_SAI = ["Insumos administrativos", "Estrutura básica", "Impostos e taxas", "Recursos Humanos", "Rendimento Sócios/Pró-labore", "Prestadores de serviço", "Banco(s)", "Matéria prima", "Marketing e vendas", "Treinamento e desenvolvimento", "Máquinas e equipamentos", "Transporte/frota/Automóveis"];
 
         document.addEventListener('DOMContentLoaded', () => {
-            if(!clientId) { alert("Erro: ID não fornecido"); return; }
+            if(!clientId) { alert("Erro de ID"); return; }
             document.getElementById('sidebarToggle').addEventListener('click', e => { e.preventDefault(); document.body.classList.toggle('sb-sidenav-toggled'); });
             document.getElementById('filtroMes').value = new Date().toISOString().slice(0, 7);
             carregarDadosEmpresa();
@@ -294,57 +254,42 @@
         function irPara(pg) { window.location.href = `${pg}?id=${clientId}`; }
 
         function carregarDadosEmpresa() {
-            const db = getDB();
-            const index = db.findIndex(c => c.id === clientId);
+            const db = getDB(); const index = db.findIndex(c => c.id === clientId);
             if(index === -1) return;
             let empresa = db[index];
             document.getElementById('headerEmpresa').innerText = empresa.empresa;
 
-            // Inicialização Segura
             if(!empresa.financeiro) empresa.financeiro = [];
-            
-            // Migração/Inicialização de Categorias
             if(!empresa.configCategorias || empresa.configCategorias.length === 0) {
                 empresa.configCategorias = [];
                 DEFAULT_REC.forEach(n => empresa.configCategorias.push({id:Date.now()+Math.random(), nome:n, tipo:'Receita', isDefault:true, subcategorias:[]}));
                 DEFAULT_SAI.forEach(n => empresa.configCategorias.push({id:Date.now()+Math.random(), nome:n, tipo:'Saida', isDefault:true, subcategorias:[]}));
-                db[index] = empresa;
-                saveDB(db);
+                db[index] = empresa; saveDB(db);
             } else {
-                // Migração legado (se não tiver tipo)
                 let mudou = false;
-                empresa.configCategorias.forEach(c => {
-                    if(!c.tipo) { c.tipo = 'Saida'; mudou = true; }
-                });
+                empresa.configCategorias.forEach(c => { if(!c.tipo) { c.tipo = 'Saida'; mudou = true; } });
                 if(mudou) { db[index] = empresa; saveDB(db); }
             }
             carregarLancamentos();
         }
 
-        // --- DRE GERENCIAL ---
-        function mudarAno(delta) { anoAtualVisao += delta; carregarVisaoAnual(); }
-        
-        function carregarVisaoAnual() {
-            document.getElementById('anoVisaoAnual').innerText = anoAtualVisao;
+        // --- LÓGICA DE DADOS DRE (SEPARADA) ---
+        function calcularDadosDRE(ano) {
             const db = getDB();
             const empresa = db.find(c => c.id === clientId);
-            const tbody = document.getElementById('tabelaAnualBody');
-            tbody.innerHTML = '';
-
-            const lancs = empresa.financeiro.filter(l => l.data.startsWith(anoAtualVisao.toString()));
+            const lancs = empresa.financeiro.filter(l => l.data.startsWith(ano.toString()));
             
             const grupos = {
-                'RECEITAS': { cats: {}, cor: 'val-pos' },
-                'CUSTOS VARIÁVEIS': { cats: {}, cor: 'val-neg' },
-                'CUSTOS FIXOS': { cats: {}, cor: 'val-neg' },
-                'DESPESAS VARIÁVEIS': { cats: {}, cor: 'val-neg' },
-                'DESPESAS FIXAS': { cats: {}, cor: 'val-neg' }
+                'RECEITAS': { cats: {}, cor: 'val-pos', tipo: 'R' },
+                'CUSTOS VARIÁVEIS': { cats: {}, cor: 'val-neg', tipo: 'D' },
+                'CUSTOS FIXOS': { cats: {}, cor: 'val-neg', tipo: 'D' },
+                'DESPESAS VARIÁVEIS': { cats: {}, cor: 'val-neg', tipo: 'D' },
+                'DESPESAS FIXAS': { cats: {}, cor: 'val-neg', tipo: 'D' }
             };
 
             let recBrutaMes = Array(12).fill(0);
             let despTotalMes = Array(12).fill(0);
 
-            // 1. Processar
             lancs.forEach(l => {
                 const mes = parseInt(l.data.split('-')[1]) - 1;
                 let gKey = '';
@@ -360,78 +305,157 @@
                     else if(nat === 'Despesa' && comp === 'Variavel') gKey = 'DESPESAS VARIÁVEIS';
                     else gKey = 'DESPESAS FIXAS';
                 }
+                
                 if(!grupos[gKey].cats[l.categoria]) grupos[gKey].cats[l.categoria] = {};
                 if(!grupos[gKey].cats[l.categoria][l.subcategoria]) grupos[gKey].cats[l.categoria][l.subcategoria] = Array(12).fill(0);
                 grupos[gKey].cats[l.categoria][l.subcategoria][mes] += l.valor;
             });
 
-            // 2. Renderizar
-            // Receitas
-            renderGrupoDRE('RECEITAS', grupos['RECEITAS'], recBrutaMes, despTotalMes, true);
-            // Despesas
-            ['CUSTOS VARIÁVEIS', 'CUSTOS FIXOS', 'DESPESAS VARIÁVEIS', 'DESPESAS FIXAS'].forEach(g => {
-                renderGrupoDRE(g, grupos[g], recBrutaMes, despTotalMes, false);
-            });
-            // Total Saídas
-            renderLinhaDRE('TOTAL CUSTOS E DESPESAS', despTotalMes, 'row-total-saidas val-neg', true, recBrutaMes, despTotalMes, false);
-            // Resultado
-            const saldoMes = recBrutaMes.map((v, i) => v - despTotalMes[i]);
-            renderLinhaDRE('RESULTADO OPERACIONAL', saldoMes, 'row-saldo', true, recBrutaMes, despTotalMes, true);
+            return { grupos, recBrutaMes, despTotalMes };
         }
 
-        function renderGrupoDRE(gName, grupo, baseRec, baseDesp, isReceita) {
+        // --- RENDERIZAÇÃO NA TELA ---
+        function mudarAno(delta) { anoAtualVisao += delta; carregarVisaoAnual(); }
+        
+        function carregarVisaoAnual() {
+            document.getElementById('anoVisaoAnual').innerText = anoAtualVisao;
+            const tbody = document.getElementById('tabelaAnualBody');
+            tbody.innerHTML = '';
+
+            const dados = calcularDadosDRE(anoAtualVisao);
+            const { grupos, recBrutaMes, despTotalMes } = dados;
+
+            // 1. Receitas
+            renderGrupoHTML('RECEITAS', grupos['RECEITAS'], recBrutaMes, despTotalMes, true);
+
+            // 2. Despesas
+            ['CUSTOS VARIÁVEIS', 'CUSTOS FIXOS', 'DESPESAS VARIÁVEIS', 'DESPESAS FIXAS'].forEach(g => {
+                renderGrupoHTML(g, grupos[g], recBrutaMes, despTotalMes, false);
+            });
+
+            // 3. Totais e Resultado
+            renderLinhaHTML('TOTAL CUSTOS E DESPESAS', despTotalMes, 'row-total-saidas val-neg', true, recBrutaMes, despTotalMes, false);
+            const saldoMes = recBrutaMes.map((v, i) => v - despTotalMes[i]);
+            renderLinhaHTML('RESULTADO OPERACIONAL', saldoMes, 'row-saldo', true, recBrutaMes, despTotalMes, true);
+        }
+
+        function renderGrupoHTML(gName, grupo, baseRec, baseDesp, isReceita) {
             const temDados = Object.keys(grupo.cats).length > 0;
             if(!temDados && !isReceita) return;
-            renderLinhaDRE(gName, Array(12).fill(null), 'row-grupo ' + grupo.cor, false, baseRec, baseDesp, isReceita);
-            for(const [cat, subs] of Object.entries(grupo.cats)) {
-                let totCat = Array(12).fill(0);
-                for(const vals of Object.values(subs)) vals.forEach((v,i) => totCat[i] += v);
-                renderLinhaDRE(cat, totCat, `row-cat indent-cat ${grupo.cor}`, true, baseRec, baseDesp, isReceita);
-                for(const [sub, vals] of Object.entries(subs)) {
-                    renderLinhaDRE(sub, vals, `row-sub indent-sub ${grupo.cor}`, true, baseRec, baseDesp, isReceita);
+
+            renderLinhaHTML(gName, Array(12).fill(null), 'row-grupo ' + grupo.cor, false, baseRec, baseDesp, isReceita);
+
+            for(const [catNome, subs] of Object.entries(grupo.cats)) {
+                let totalCat = Array(12).fill(0);
+                for(const vals of Object.values(subs)) vals.forEach((v,i) => totalCat[i] += v);
+                
+                // Categoria (Apenas Título)
+                renderLinhaHTML(catNome, Array(12).fill(null), `row-cat indent-cat ${grupo.cor}`, false, baseRec, baseDesp, isReceita);
+
+                // Subcategorias
+                for(const [subNome, vals] of Object.entries(subs)) {
+                    renderLinhaHTML(subNome, vals, `row-sub indent-sub ${grupo.cor}`, true, baseRec, baseDesp, isReceita);
                 }
+                
+                // Total Categoria (Rodapé)
+                renderLinhaHTML(`Total ${catNome}`, totalCat, `row-cat-total indent-total ${grupo.cor}`, true, baseRec, baseDesp, isReceita);
             }
         }
 
-        function renderLinhaDRE(titulo, valores, classeCSS, calcTotal, baseRec, baseDesp, isReceita) {
+        function renderLinhaHTML(titulo, valores, classeCSS, temValor, baseRec, baseDesp, isReceita) {
             const tbody = document.getElementById('tabelaAnualBody');
             let cols = '';
-            let totAno = 0;
-            const bR = baseRec || Array(12).fill(0);
-            const bD = baseDesp || Array(12).fill(0);
-            const totRecAno = bR.reduce((a,b)=>a+b,0);
-            const totDespAno = bD.reduce((a,b)=>a+b,0);
+            let totalAno = 0;
+            const bRec = baseRec || Array(12).fill(0);
+            const bDesp = baseDesp || Array(12).fill(0);
 
             valores.forEach((v, i) => {
-                if(v === null) {
-                    cols += '<td></td><td></td><td></td>';
+                if(v === null || !temValor) {
+                    cols += '<td></td>';
                 } else {
-                    totAno += v;
-                    const val = v !== 0 ? v.toLocaleString('pt-BR',{minimumFractionDigits:2}) : '-';
-                    const av1 = (bR[i] > 0) ? ((v/bR[i])*100).toFixed(1)+'%' : '-';
-                    let av2 = '-';
-                    let clsAv2 = 'col-pct';
-                    if(!isReceita && bD[i] > 0) {
-                        const p = (v/bD[i])*100;
-                        if(p > 0) { av2 = p.toFixed(1)+'%'; clsAv2 += ' col-pct-desp'; }
-                    }
-                    cols += `<td class="col-valor">${val}</td><td class="col-pct">${av1}</td><td class="${clsAv2}">${av2}</td>`;
+                    totalAno += v;
+                    const valFmt = v !== 0 ? v.toLocaleString('pt-BR',{minimumFractionDigits:2}) : '-';
+                    
+                    // Tooltip Logic
+                    let av1 = (bRec[i] > 0) ? ((v/bRec[i])*100).toFixed(1) : '0.0';
+                    let av2 = (bDesp[i] > 0 && !isReceita) ? ((v/bDesp[i])*100).toFixed(1) : '0.0';
+                    
+                    const tooltip = `Valor: R$ ${valFmt}\n% Receita: ${av1}%\n${!isReceita ? '% Despesa: '+av2+'%' : ''}`;
+                    
+                    cols += `<td class="col-valor" title="${tooltip}">${valFmt}</td>`;
                 }
             });
 
-            let tF='', tA1='', tA2='';
-            if(calcTotal && valores[0]!==null) {
-                tF = totAno.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-                tA1 = totRecAno > 0 ? ((totAno/totRecAno)*100).toFixed(1)+'%' : '-';
-                if(!isReceita && totDespAno > 0) tA2 = ((totAno/totDespAno)*100).toFixed(1)+'%';
-            }
-
+            const totalFmt = temValor ? totalAno.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '';
             const tr = document.createElement('tr');
-            tr.innerHTML = `<td class="sticky-col ${classeCSS}">${titulo}</td>${cols}<td class="col-valor bg-secondary text-white border-start border-white">${tF}</td><td class="col-pct bg-secondary text-white border-start border-white">${tA1}</td><td class="col-pct bg-secondary text-white border-start border-white">${tA2}</td>`;
+            tr.innerHTML = `<td class="sticky-col ${classeCSS}">${titulo}</td>${cols}<td class="col-valor bg-secondary text-white fw-bold">${totalFmt}</td>`;
             tbody.appendChild(tr);
         }
 
-        // --- CRUD / CONFIG ---
+        // --- EXPORTAÇÃO CSV (PROFISSIONAL) ---
+        function exportarDRECSV() {
+            const dados = calcularDadosDRE(anoAtualVisao);
+            const { grupos, recBrutaMes, despTotalMes } = dados;
+            
+            let csvContent = "data:text/csv;charset=utf-8,";
+            // Header
+            csvContent += "Conta / Categoria;Jan - Valor;Jan - %Rec;Jan - %Desp;Fev - Valor;Fev - %Rec;Fev - %Desp;Mar - Valor;Mar - %Rec;Mar - %Desp;Abr - Valor;Abr - %Rec;Abr - %Desp;Mai - Valor;Mai - %Rec;Mai - %Desp;Jun - Valor;Jun - %Rec;Jun - %Desp;Jul - Valor;Jul - %Rec;Jul - %Desp;Ago - Valor;Ago - %Rec;Ago - %Desp;Set - Valor;Set - %Rec;Set - %Desp;Out - Valor;Out - %Rec;Out - %Desp;Nov - Valor;Nov - %Rec;Nov - %Desp;Dez - Valor;Dez - %Rec;Dez - %Desp;TOTAL ANUAL\n";
+
+            function addLinhaCSV(nome, valores, isRec) {
+                let linha = `"${nome}"`;
+                let totalAno = 0;
+                
+                valores.forEach((v, i) => {
+                    totalAno += v;
+                    const valStr = v.toFixed(2).replace('.', ',');
+                    
+                    // Cálculos
+                    let av1 = (recBrutaMes[i] > 0) ? ((v/recBrutaMes[i])*100).toFixed(2).replace('.', ',') + '%' : '-';
+                    let av2 = (!isRec && despTotalMes[i] > 0) ? ((v/despTotalMes[i])*100).toFixed(2).replace('.', ',') + '%' : '-';
+                    
+                    linha += `;${valStr};${av1};${av2}`;
+                });
+                linha += `;${totalAno.toFixed(2).replace('.', ',')}`;
+                csvContent += linha + "\n";
+            }
+
+            // Geração
+            // 1. Receitas
+            addLinhaCSV("RECEITAS TOTAIS", recBrutaMes, true);
+            const grpRec = grupos['RECEITAS'];
+            for(const [cat, subs] of Object.entries(grpRec.cats)) {
+                for(const [sub, vals] of Object.entries(subs)) {
+                    addLinhaCSV(`  ${cat} > ${sub}`, vals, true);
+                }
+            }
+
+            // 2. Despesas
+            const ord = ['CUSTOS VARIÁVEIS', 'CUSTOS FIXOS', 'DESPESAS VARIÁVEIS', 'DESPESAS FIXAS'];
+            ord.forEach(g => {
+                addLinhaCSV(g, Array(12).fill(0), false); // Título
+                const grp = grupos[g];
+                for(const [cat, subs] of Object.entries(grp.cats)) {
+                    for(const [sub, vals] of Object.entries(subs)) {
+                        addLinhaCSV(`  ${cat} > ${sub}`, vals, false);
+                    }
+                }
+            });
+
+            // 3. Resultado
+            const saldoMes = recBrutaMes.map((v, i) => v - despTotalMes[i]);
+            addLinhaCSV("RESULTADO OPERACIONAL", saldoMes, true);
+
+            // Download
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `DRE_Ancora_${anoAtualVisao}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- MANIPULAÇÃO UI (CRUD) ---
         function toggleFormTipo() { setTipoConfig(document.querySelector('input[name="tipoMov"]:checked').value); carregarCategoriasSelect(); }
         function abrirModalLancamento() { document.getElementById('formLancamento').reset(); document.getElementById('lancData').valueAsDate=new Date(); document.getElementById('tipoReceita').checked=true; toggleFormTipo(); new bootstrap.Modal(document.getElementById('modalLancamento')).show(); }
         
@@ -462,7 +486,6 @@
 
         function excluirLancamento(id) { if(confirm("Excluir?")){const db=getDB(),i=db.findIndex(c=>c.id===clientId);db[i].financeiro=db[i].financeiro.filter(l=>l.id!==id);saveDB(db);carregarLancamentos();carregarVisaoAnual();}}
 
-        // Config Categorias
         function setTipoConfig(t) {
             tipoConfigAtual = t;
             document.getElementById('divClassificacaoSub').style.display = t==='Receita'?'none':'flex';
@@ -529,7 +552,6 @@
             c.subcategorias.forEach(s=> { const o=document.createElement('option'); o.text=s.nome; if(c.tipo==='Saida'){ o.setAttribute('data-nat',s.natureza); o.setAttribute('data-comp',s.comportamento); } sub.add(o); });
         }
         
-        // --- JSON IMPORT ---
         function abrirModalInfoJson() { new bootstrap.Modal(document.getElementById('modalInfoJson')).show(); }
         function triggerImport(){ document.getElementById('inputFileJson').click(); }
         function processarImportacao(input){
@@ -542,7 +564,6 @@
             }catch(err){alert('Erro ao ler JSON: Formato inválido.');}}; r.readAsText(input.files[0]);
         }
         
-        // Extrato
         function carregarLancamentos() {
             const db=getDB(), emp=db.find(c=>c.id===clientId), mes=document.getElementById('filtroMes').value;
             const tb=document.getElementById('tabelaLancamentos'); tb.innerHTML='';
