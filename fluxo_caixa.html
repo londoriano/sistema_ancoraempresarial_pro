@@ -158,9 +158,38 @@
                 <div class="tab-content">
                     
                     <div class="tab-pane fade show active" id="view-extrato">
-                        <div class="d-flex justify-content-end mb-3 align-items-center gap-2">
-                            <label class="fw-bold text-muted small">Mês:</label>
-                            <input type="month" id="filtroMes" class="form-control form-control-sm" style="width: 350px;" onchange="carregarLancamentos()">
+                        <div class="card bg-light border-0 p-3 mb-4 rounded-3">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-md-3">
+                                    <label class="small fw-bold text-muted mb-1">Período</label>
+                                    <input type="month" id="filtroMes" class="form-control form-control-sm bg-white" onchange="carregarLancamentos()">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="small fw-bold text-muted mb-1">Buscar</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                                        <input type="text" id="filtroBusca" class="form-control bg-white" placeholder="Descrição, Categoria..." onkeyup="carregarLancamentos()">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="small fw-bold text-muted mb-1">Tipo / Natureza</label>
+                                    <select id="filtroTipoNat" class="form-select form-select-sm bg-white" onchange="carregarLancamentos()">
+                                        <option value="todos">Todos</option>
+                                        <option value="Receita">Receitas (Entradas)</option>
+                                        <option value="Saida">Saídas (Geral)</option>
+                                        <option value="Custo">↳ Apenas Custos</option>
+                                        <option value="Despesa">↳ Apenas Despesas</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="small fw-bold text-muted mb-1">Status</label>
+                                    <select id="filtroStatus" class="form-select form-select-sm bg-white" onchange="carregarLancamentos()">
+                                        <option value="todos">Todos</option>
+                                        <option value="Realizado">Realizado</option>
+                                        <option value="Provisionado">Provisionado</option>
+                                    </select>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="row g-3 mb-4">
@@ -236,6 +265,7 @@
                 </div>
                 <div class="modal-body">
                     <form id="formLancamento" onsubmit="salvarLancamento(event)">
+                        <input type="hidden" id="editId">
                         
                         <div class="btn-group w-100 mb-3">
                             <input type="radio" class="btn-check" name="tipoMov" id="tipoReceita" value="Receita" onchange="toggleFormTipo()" checked>
@@ -600,12 +630,80 @@
         function toggleFormTipo() { setTipoConfig(document.querySelector('input[name="tipoMov"]:checked').value); carregarCategoriasSelect(); }
         function abrirModalLancamento() { document.getElementById('formLancamento').reset(); document.getElementById('lancData').valueAsDate=new Date(); document.getElementById('tipoReceita').checked=true; toggleFormTipo(); new bootstrap.Modal(document.getElementById('modalLancamento')).show(); }
         
+        // --- FUNÇÕES DE EDIÇÃO ---
+        
+        // 1. Prepara o modal para criar um NOVO (Limpa tudo)
+        function abrirModalLancamento() { 
+            document.getElementById('formLancamento').reset(); 
+            document.getElementById('editId').value = ""; // Limpa ID -> Modo Criação
+            document.getElementById('lancData').valueAsDate = new Date(); 
+            document.getElementById('tipoReceita').checked = true; 
+            document.querySelector('.modal-title').innerText = "Novo Lançamento";
+            
+            // Reseta visual da recorrência
+            document.getElementById('lancRecorrente').checked = false;
+            document.getElementById('lancRecorrente').disabled = false; // Habilita recorrência para novos
+            toggleRecorrencia();
+            
+            toggleFormTipo(); 
+            new bootstrap.Modal(document.getElementById('modalLancamento')).show(); 
+        }
+
+        // 2. Carrega dados existentes para EDITAR
+        function editarLancamento(id) {
+            const db = getDB();
+            const emp = db.find(c => c.id === clientId);
+            const l = emp.financeiro.find(x => x.id === id);
+            
+            if(!l) return;
+
+            // Preenche campos
+            document.getElementById('editId').value = l.id; // Define ID -> Modo Edição
+            document.getElementById('lancData').value = l.data;
+            document.getElementById('lancValor').value = l.valor;
+            document.getElementById('lancDescricao').value = l.descricao;
+            document.getElementById('lancStatusRealizado').checked = (l.status === 'Realizado');
+
+            // Define Tipo (Radio)
+            if(l.tipo === 'Receita') document.getElementById('tipoReceita').checked = true;
+            else document.getElementById('tipoSaida').checked = true;
+            toggleFormTipo(); // Atualiza select de categorias
+
+            // Seleciona Categoria e Subcategoria
+            // Precisamos procurar o ID da categoria baseada no nome gravado
+            const catObj = emp.configCategorias.find(c => c.nome === l.categoria && c.tipo === l.tipo);
+            if(catObj) {
+                document.getElementById('lancCategoria').value = catObj.id;
+                carregarSubcategoriasSelect(); // Carrega as subs
+                
+                // Agora seleciona a subcategoria pelo texto
+                const selSub = document.getElementById('lancSubcategoria');
+                for (let i = 0; i < selSub.options.length; i++) {
+                    if (selSub.options[i].text === l.subcategoria) {
+                        selSub.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            // Desabilita recorrência na edição (para evitar duplicidade complexa)
+            document.getElementById('lancRecorrente').checked = false;
+            document.getElementById('lancRecorrente').disabled = true;
+            toggleRecorrencia();
+
+            document.querySelector('.modal-title').innerText = "Editar Lançamento";
+            new bootstrap.Modal(document.getElementById('modalLancamento')).show();
+        }
+
+        // 3. Salvar (Agora decide se cria ou atualiza)
         function salvarLancamento(e) {
             e.preventDefault(); 
             const db = getDB(); 
             const idx = db.findIndex(c => c.id === clientId);
             
-            // Captura dados do formulário
+            const editId = document.getElementById('editId').value; // Verifica se tem ID
+            
+            // Dados Form
             const tipo = document.querySelector('input[name="tipoMov"]:checked').value;
             const cs = document.getElementById('lancCategoria');
             const ss = document.getElementById('lancSubcategoria');
@@ -614,10 +712,6 @@
             const descBase = document.getElementById('lancDescricao').value;
             const isRealizado = document.getElementById('lancStatusRealizado').checked;
             
-            // Dados de Recorrência
-            const isRecorrente = document.getElementById('lancRecorrente').checked;
-            const qtdParcelas = isRecorrente ? parseInt(document.getElementById('lancParcelas').value) : 1;
-
             if(!cs.value || !ss.value) { alert("Categorize!"); return; }
             
             const catNome = cs.options[cs.selectedIndex].text;
@@ -629,48 +723,53 @@
                 comp = ss.options[ss.selectedIndex].getAttribute('data-comp');
             }
 
-            // LOOP DE CRIAÇÃO (1x ou Nx)
-            for (let i = 0; i < qtdParcelas; i++) {
-                // 1. Cálculo da Data (Mês a Mês)
-                // Cria a data baseada na string 'YYYY-MM-DD' e soma 'i' meses
-                // Usamos UTC para evitar problemas de fuso horário voltando dia
-                let dateObj = new Date(dataBase + 'T12:00:00'); 
-                dateObj.setMonth(dateObj.getMonth() + i);
-                let dataFinal = dateObj.toISOString().split('T')[0];
-
-                // 2. Descrição Inteligente
-                let descricaoFinal = descBase;
-                if (isRecorrente) {
-                    descricaoFinal += ` (${i + 1}/${qtdParcelas})`;
+            // --- MODO EDIÇÃO ---
+            if (editId) {
+                const lancIndex = db[idx].financeiro.findIndex(l => l.id == editId);
+                if (lancIndex !== -1) {
+                    // Atualiza o objeto existente
+                    db[idx].financeiro[lancIndex] = {
+                        ...db[idx].financeiro[lancIndex], // Mantém ID original e outros campos
+                        data: dataBase,
+                        tipo: tipo,
+                        valor: valorBase,
+                        categoria: catNome,
+                        subcategoria: subNome,
+                        natureza: nat,
+                        comportamento: comp,
+                        descricao: descBase,
+                        status: isRealizado ? 'Realizado' : 'Provisionado'
+                    };
                 }
+            } 
+            // --- MODO CRIAÇÃO (Novo) ---
+            else {
+                const isRecorrente = document.getElementById('lancRecorrente').checked;
+                const qtdParcelas = isRecorrente ? parseInt(document.getElementById('lancParcelas').value) : 1;
 
-                // 3. Status Inteligente (Opcional: Futuro = Provisionado?)
-                // Por padrão, mantemos o que o usuário escolheu para todas, 
-                // mas você pode forçar provisionado se i > 0.
-                // Aqui mantive a escolha do usuário.
-                let statusFinal = isRealizado ? 'Realizado' : 'Provisionado';
-
-                db[idx].financeiro.push({
-                    id: Date.now() + i, // ID único sequencial
-                    data: dataFinal,
-                    tipo: tipo,
-                    valor: valorBase,
-                    categoria: catNome,
-                    subcategoria: subNome,
-                    natureza: nat,
-                    comportamento: comp,
-                    descricao: descricaoFinal,
-                    status: statusFinal
-                });
+                for (let i = 0; i < qtdParcelas; i++) {
+                    let dateObj = new Date(dataBase + 'T12:00:00'); 
+                    dateObj.setMonth(dateObj.getMonth() + i);
+                    let dataFinal = dateObj.toISOString().split('T')[0];
+                    let descricaoFinal = descBase + (isRecorrente ? ` (${i + 1}/${qtdParcelas})` : '');
+                    
+                    db[idx].financeiro.push({
+                        id: Date.now() + i,
+                        data: dataFinal,
+                        tipo: tipo,
+                        valor: valorBase,
+                        categoria: catNome,
+                        subcategoria: subNome,
+                        natureza: nat,
+                        comportamento: comp,
+                        descricao: descricaoFinal,
+                        status: isRealizado ? 'Realizado' : 'Provisionado'
+                    });
+                }
             }
 
             saveDB(db); 
             bootstrap.Modal.getInstance(document.getElementById('modalLancamento')).hide();
-            
-            // Reset do form manual para garantir limpeza
-            document.getElementById('lancRecorrente').checked = false;
-            toggleRecorrencia();
-            
             carregarLancamentos(); 
             if(document.getElementById('view-anual').classList.contains('active')) carregarVisaoAnual();
         }
@@ -811,16 +910,46 @@
             }catch(err){alert('Erro ao ler JSON: Formato inválido.');}}; r.readAsText(input.files[0]);
         }
         
-        function carregarLancamentos() {
+       function carregarLancamentos() {
             const db = getDB();
             const emp = db.find(c => c.id === clientId);
+            
+            // CAPTURA DOS FILTROS
             const mes = document.getElementById('filtroMes').value;
+            const termo = document.getElementById('filtroBusca').value.toLowerCase();
+            const tipoNat = document.getElementById('filtroTipoNat').value; // todos, Receita, Saida, Custo, Despesa
+            const status = document.getElementById('filtroStatus').value; // todos, Realizado, Provisionado
+            
             const tb = document.getElementById('tabelaLancamentos'); 
             tb.innerHTML = '';
             
-            const fs = emp.financeiro.filter(l => l.data.startsWith(mes));
+            // 1. Filtro de Data (Base)
+            let fs = emp.financeiro.filter(l => l.data.startsWith(mes));
             
-            let r = 0, s = 0; // Totais de Receita e Saída
+            // 2. Filtro de Texto (Busca)
+            if (termo) {
+                fs = fs.filter(l => 
+                    l.descricao.toLowerCase().includes(termo) || 
+                    l.categoria.toLowerCase().includes(termo) || 
+                    l.subcategoria.toLowerCase().includes(termo)
+                );
+            }
+
+            // 3. Filtro de Tipo/Natureza
+            if (tipoNat !== 'todos') {
+                if (tipoNat === 'Receita') fs = fs.filter(l => l.tipo === 'Receita');
+                else if (tipoNat === 'Saida') fs = fs.filter(l => l.tipo === 'Saida');
+                else if (tipoNat === 'Custo') fs = fs.filter(l => l.natureza === 'Custo');
+                else if (tipoNat === 'Despesa') fs = fs.filter(l => l.natureza === 'Despesa');
+            }
+
+            // 4. Filtro de Status
+            if (status !== 'todos') {
+                fs = fs.filter(l => l.status === status);
+            }
+            
+            // CÁLCULO DE TOTAIS (DO QUE ESTÁ VISÍVEL NA TELA)
+            let r = 0, s = 0; 
 
             if(fs.length === 0) {
                 document.getElementById('emptyState').classList.remove('d-none');
@@ -832,63 +961,50 @@
                     const isNonCash = l.categoria === "Amortização/Depreciação";
                     const isRealizado = l.status === 'Realizado';
 
-                    // LÓGICA DE SOMA (Regime de Caixa)
-                    // Só soma se for Realizado. Se for Depreciação, nunca soma no caixa.
+                    // Soma Dinâmica (Baseado no que foi filtrado)
                     if (isRealizado) {
                         if (l.tipo === 'Receita') r += l.valor; 
                         else if (!isNonCash) s += l.valor;
                     }
                     
-                    // LÓGICA VISUAL
+                    // Visual
                     let bTipo = l.tipo === 'Receita' 
                         ? '<span class="badge badge-receita">Receita</span>' 
                         : `<span class="badge bg-secondary badge-natureza">${l.natureza || '-'}</span>`;
                     
                     let cor = l.tipo === 'Receita' ? 'text-success' : 'text-danger';
-                    let styleRow = '';
-                    let styleVal = '';
-                    let iconStatus = '';
+                    let styleRow = ''; let styleVal = ''; let iconStatus = '';
 
                     if (isNonCash) {
-                        // Estilo Depreciação
-                        bTipo = '<span class="badge bg-secondary">Contábil</span>';
-                        cor = 'text-muted';
-                        styleRow = 'background-color: #f8f9fa; font-style: italic;';
-                        styleVal = 'text-decoration: line-through; opacity: 0.7;';
+                        bTipo = '<span class="badge bg-secondary">Contábil</span>'; cor = 'text-muted';
+                        styleRow = 'background-color: #f8f9fa; font-style: italic;'; styleVal = 'text-decoration: line-through; opacity: 0.7;';
                     } 
                     else if (!isRealizado) {
-                        // Estilo Provisionado (Pendente)
-                        iconStatus = '<i class="bi bi-hourglass-split text-warning me-1" title="Provisionado (Não afeta saldo)"></i>';
-                        styleRow = 'opacity: 0.6; background-color: #fffcf5;'; // Levemente apagado e amarelado
-                        cor = 'text-muted'; // Valor cinza para não chamar atenção
+                        iconStatus = '<i class="bi bi-hourglass-split text-warning me-1" title="Provisionado"></i>';
+                        styleRow = 'opacity: 0.6; background-color: #fffcf5;'; cor = 'text-muted';
                     }
 
-                    // Renderiza
+                    // Renderiza com Botão de Edição (Lápis)
                     tb.innerHTML += `
                         <tr style="${styleRow}">
-                            <td class="ps-4">${l.data.split('-').reverse().join('/')}</td>
-                            <td class="fw-bold text-dark">
-                                ${iconStatus} ${l.descricao}
-                            </td>
-                            <td>
-                                <small class="d-block text-muted">${l.categoria}</small>
-                                ${l.subcategoria}
-                            </td>
+                            <td class="ps-4" style="font-size:0.85rem">${l.data.split('-').reverse().join('/')}</td>
+                            <td class="fw-bold text-dark">${iconStatus} ${l.descricao}</td>
+                            <td><small class="d-block text-muted">${l.categoria}</small>${l.subcategoria}</td>
                             <td>${bTipo}</td>
                             <td class="text-end pe-4 fw-bold ${cor}" style="${styleVal}">
                                 ${l.tipo === 'Saida' ? '-' : ''} ${l.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                             </td>
                             <td class="text-end">
-                                <i class="bi bi-trash text-danger cursor-pointer" onclick="excluirLancamento(${l.id})"></i>
+                                <i class="bi bi-pencil-square text-primary cursor-pointer me-3" onclick="editarLancamento(${l.id})" title="Editar"></i>
+                                <i class="bi bi-trash text-danger cursor-pointer" onclick="excluirLancamento(${l.id})" title="Excluir"></i>
                             </td>
                         </tr>`;
                 });
             }
 
-            // Atualiza Cards Superiores
+            // Atualiza Cards
             document.getElementById('totalReceitas').innerText = r.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
             document.getElementById('totalSaidas').innerText = s.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-            
             const sal = r - s; 
             document.getElementById('saldoMes').innerText = sal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
             document.getElementById('saldoMes').className = `fw-bold mb-0 ${sal >= 0 ? 'text-success' : 'text-danger'}`;
