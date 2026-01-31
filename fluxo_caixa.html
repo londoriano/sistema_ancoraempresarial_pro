@@ -274,13 +274,21 @@
                             <label class="btn btn-outline-danger" for="tipoSaida">Saída</label>
                         </div>
                         
-                        <div class="row g-2 mb-3">
+                        <div class="row g-2 mb-2">
                             <div class="col-6">
+                                <label class="small fw-bold text-muted">Data (Caixa)</label>
                                 <input type="date" id="lancData" class="form-control" required>
                             </div>
                             <div class="col-6">
+                                <label class="small fw-bold text-muted">Valor</label>
                                 <input type="number" step="0.01" id="lancValor" class="form-control" required placeholder="R$">
                             </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="small text-muted">Data de Competência (DRE)</label>
+                            <input type="date" id="lancCompetencia" class="form-control form-control-sm text-muted">
+                            <div class="form-text" style="font-size: 0.75rem;">Se vazio, assume a mesma data do caixa.</div>
                         </div>
                         
                         <div class="mb-3">
@@ -628,8 +636,26 @@
 
         // --- MANIPULAÇÃO UI (CRUD) ---
         function toggleFormTipo() { setTipoConfig(document.querySelector('input[name="tipoMov"]:checked').value); carregarCategoriasSelect(); }
-        function abrirModalLancamento() { document.getElementById('formLancamento').reset(); document.getElementById('lancData').valueAsDate=new Date(); document.getElementById('tipoReceita').checked=true; toggleFormTipo(); new bootstrap.Modal(document.getElementById('modalLancamento')).show(); }
-        
+        function abrirModalLancamento() { 
+            document.getElementById('formLancamento').reset(); 
+            document.getElementById('editId').value = ""; // Limpa ID -> Modo Criação
+            
+            // Define HOJE como padrão para CAIXA e COMPETÊNCIA
+            const hoje = new Date().toISOString().split('T')[0];
+            document.getElementById('lancData').value = hoje; 
+            document.getElementById('lancCompetencia').value = hoje; 
+
+            document.getElementById('tipoReceita').checked = true; 
+            document.querySelector('.modal-title').innerText = "Novo Lançamento";
+            
+            // Reseta visual da recorrência
+            document.getElementById('lancRecorrente').checked = false;
+            document.getElementById('lancRecorrente').disabled = false; 
+            toggleRecorrencia();
+            
+            toggleFormTipo(); 
+            new bootstrap.Modal(document.getElementById('modalLancamento')).show(); 
+        }        
         // --- FUNÇÕES DE EDIÇÃO ---
         
         // 1. Prepara o modal para criar um NOVO (Limpa tudo)
@@ -658,25 +684,26 @@
             if(!l) return;
 
             // Preenche campos
-            document.getElementById('editId').value = l.id; // Define ID -> Modo Edição
+            document.getElementById('editId').value = l.id; 
             document.getElementById('lancData').value = l.data;
+            
+            // CARREGA COMPETÊNCIA (Se não existir, usa a data do caixa)
+            document.getElementById('lancCompetencia').value = l.dataCompetencia || l.data;
+
             document.getElementById('lancValor').value = l.valor;
             document.getElementById('lancDescricao').value = l.descricao;
             document.getElementById('lancStatusRealizado').checked = (l.status === 'Realizado');
 
-            // Define Tipo (Radio)
+            // Define Tipo
             if(l.tipo === 'Receita') document.getElementById('tipoReceita').checked = true;
             else document.getElementById('tipoSaida').checked = true;
-            toggleFormTipo(); // Atualiza select de categorias
+            toggleFormTipo(); 
 
-            // Seleciona Categoria e Subcategoria
-            // Precisamos procurar o ID da categoria baseada no nome gravado
+            // Lógica de Seleção de Categoria (igual anterior)
             const catObj = emp.configCategorias.find(c => c.nome === l.categoria && c.tipo === l.tipo);
             if(catObj) {
                 document.getElementById('lancCategoria').value = catObj.id;
-                carregarSubcategoriasSelect(); // Carrega as subs
-                
-                // Agora seleciona a subcategoria pelo texto
+                carregarSubcategoriasSelect(); 
                 const selSub = document.getElementById('lancSubcategoria');
                 for (let i = 0; i < selSub.options.length; i++) {
                     if (selSub.options[i].text === l.subcategoria) {
@@ -686,7 +713,7 @@
                 }
             }
 
-            // Desabilita recorrência na edição (para evitar duplicidade complexa)
+            // Desabilita recorrência na edição
             document.getElementById('lancRecorrente').checked = false;
             document.getElementById('lancRecorrente').disabled = true;
             toggleRecorrencia();
@@ -701,13 +728,17 @@
             const db = getDB(); 
             const idx = db.findIndex(c => c.id === clientId);
             
-            const editId = document.getElementById('editId').value; // Verifica se tem ID
+            const editId = document.getElementById('editId').value; 
             
             // Dados Form
             const tipo = document.querySelector('input[name="tipoMov"]:checked').value;
             const cs = document.getElementById('lancCategoria');
             const ss = document.getElementById('lancSubcategoria');
+            
             const dataBase = document.getElementById('lancData').value;
+            // CAPTURA A COMPETÊNCIA (Fallback para Data Caixa se vazio)
+            const dataCompBase = document.getElementById('lancCompetencia').value || dataBase;
+
             const valorBase = parseFloat(document.getElementById('lancValor').value);
             const descBase = document.getElementById('lancDescricao').value;
             const isRealizado = document.getElementById('lancStatusRealizado').checked;
@@ -727,10 +758,10 @@
             if (editId) {
                 const lancIndex = db[idx].financeiro.findIndex(l => l.id == editId);
                 if (lancIndex !== -1) {
-                    // Atualiza o objeto existente
                     db[idx].financeiro[lancIndex] = {
-                        ...db[idx].financeiro[lancIndex], // Mantém ID original e outros campos
+                        ...db[idx].financeiro[lancIndex],
                         data: dataBase,
+                        dataCompetencia: dataCompBase, // SALVA COMPETÊNCIA
                         tipo: tipo,
                         valor: valorBase,
                         categoria: catNome,
@@ -748,14 +779,22 @@
                 const qtdParcelas = isRecorrente ? parseInt(document.getElementById('lancParcelas').value) : 1;
 
                 for (let i = 0; i < qtdParcelas; i++) {
+                    // 1. Cálculo Data CAIXA
                     let dateObj = new Date(dataBase + 'T12:00:00'); 
                     dateObj.setMonth(dateObj.getMonth() + i);
                     let dataFinal = dateObj.toISOString().split('T')[0];
+
+                    // 2. Cálculo Data COMPETÊNCIA (Avança junto com o caixa)
+                    let dateCompObj = new Date(dataCompBase + 'T12:00:00');
+                    dateCompObj.setMonth(dateCompObj.getMonth() + i);
+                    let dataCompFinal = dateCompObj.toISOString().split('T')[0];
+
                     let descricaoFinal = descBase + (isRecorrente ? ` (${i + 1}/${qtdParcelas})` : '');
                     
                     db[idx].financeiro.push({
                         id: Date.now() + i,
                         data: dataFinal,
+                        dataCompetencia: dataCompFinal, // SALVA COMPETÊNCIA CALCULADA
                         tipo: tipo,
                         valor: valorBase,
                         categoria: catNome,

@@ -328,9 +328,14 @@
             const inicio = document.getElementById('mesInicio').value;
             const fim = document.getElementById('mesFim').value;
 
-            const lancs = empresa.financeiro.filter(l => 
-                l.data.slice(0, 7) >= inicio && l.data.slice(0, 7) <= fim
-            );
+           // FILTRO DE DATA (Alterado para COMPETÊNCIA)
+            const lancs = empresa.financeiro.filter(l => {
+                // Se existe dataCompetencia, usa ela. Se não, usa a data normal (fallback).
+                const dataConsiderada = l.dataCompetencia || l.data;
+                
+                return dataConsiderada.slice(0, 7) >= inicio && 
+                       dataConsiderada.slice(0, 7) <= fim;
+            });
 
             // ESTRUTURA DE DADOS
             let DRE = {
