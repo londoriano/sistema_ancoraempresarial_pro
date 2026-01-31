@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DRE Gerencial | Âncora</title>
+    <link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="lib/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; overflow-x: hidden; }
+        
+        /* Layout Sidebar */
+        #wrapper { display: flex; width: 100%; }
+        #sidebar-wrapper {
+            min-height: 100vh; width: 250px; margin-left: -250px;
+            background-color: #2c3e50; transition: margin 0.25s ease-out;
+            position: fixed; z-index: 1000;
+        }
+        #sidebar-wrapper .sidebar-heading { padding: 1.5rem; font-size: 1.2rem; color: white; font-weight: bold; }
+        #sidebar-wrapper .list-group-item { background-color: transparent; color: rgba(255,255,255,0.7); border: none; padding: 1rem 1.5rem; }
+        #sidebar-wrapper .list-group-item:hover { background-color: rgba(255,255,255,0.1); color: white; }
+        #sidebar-wrapper .list-group-item.active { background-color: #1a252f; color: white; font-weight: bold; border-left: 4px solid #0dcaf0; }
+        #page-content-wrapper { width: 100%; margin-left: 0; transition: margin 0.25s ease-out; }
+        @media (min-width: 768px) { #sidebar-wrapper { margin-left: 0; } #page-content-wrapper { margin-left: 250px; } }
+
+        /* Estilos DRE */
+        .card-dre { border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .table-dre { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        .table-dre th, .table-dre td { padding: 6px 12px; border-bottom: 1px solid #e9ecef; vertical-align: middle; }
+        
+        /* Hierarquia Visual e Cores */
+        .dre-receita { color: #198754; font-weight: 600; }
+        .dre-deducao { color: #dc3545; }
+        .dre-resultado { background-color: #f8f9fa; font-weight: 800; color: #212529; text-transform: uppercase; border-top: 2px solid #dee2e6; }
+        .dre-indicador-chave { background-color: #2c3e50; color: white; font-weight: bold; font-size: 1.1em; } 
+        .dre-lucro { background-color: #198754; color: white; font-weight: 900; font-size: 1.2em; border-top: 3px double white; }
+        .dre-prejuizo { background-color: #dc3545; color: white; font-weight: 900; font-size: 1.2em; border-top: 3px double white; }
+        
+        .col-valor { text-align: right; font-family: 'Consolas', monospace; font-weight: 600; width: 160px; }
+        .col-av { text-align: right; width: 80px; font-size: 0.85em; color: #6c757d; font-weight: 500; }
+        
+        /* Indentação (Cascata) */
+        .indent-cat { padding-left: 25px !important; color: #495057; font-weight: 600; font-size: 0.9em; }
+        .indent-sub { padding-left: 50px !important; color: #6c757d; font-style: italic; font-size: 0.85em; background-color: #fffcfc; }
+
+        /* KPI Cards */
+        .kpi-card { transition: transform 0.2s; border-left: 5px solid transparent; }
+        .kpi-card:hover { transform: translateY(-3px); }
+        .kpi-ebitda { border-color: #0dcaf0; }
+        .kpi-lucro { border-color: #198754; }
+        .kpi-margem { border-color: #ffc107; }
+    </style>
+</head>
+<body>
+
+    <div class="d-flex" id="wrapper">
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading"><i class="bi bi-building"></i> Âncora PRO</div>
+            <div class="list-group list-group-flush mt-3">
+                <a href="#" onclick="irPara('dados_empresa.html')" class="list-group-item list-group-item-action">
+                    <i class="bi bi-clipboard-data me-2"></i> Diagnóstico
+                </a>
+                <a href="#" onclick="irPara('fluxo_caixa.html')" class="list-group-item list-group-item-action">
+                    <i class="bi bi-cash-stack me-2"></i> Fluxo de Caixa
+                </a>
+                <a href="#" class="list-group-item list-group-item-action active">
+                    <i class="bi bi-file-earmark-spreadsheet me-2"></i> DRE Gerencial
+                </a>
+                <div class="mt-5 border-top border-secondary pt-3 px-3">
+                    <a href="clientes.html" class="btn btn-outline-light w-100 btn-sm">
+                        <i class="bi bi-arrow-left"></i> Voltar para Carteira
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-3 sticky-top shadow-sm">
+                <button class="btn btn-primary d-md-none" id="sidebarToggle"><i class="bi bi-list"></i></button>
+                <h5 class="ms-3 mb-0 fw-bold text-secondary" id="headerEmpresa">Carregando...</h5>
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light">De</span>
+                        <input type="month" id="mesInicio" class="form-control">
+                        <span class="input-group-text bg-light">Até</span>
+                        <input type="month" id="mesFim" class="form-control">
+                        <button class="btn btn-primary fw-bold" onclick="gerarDRE()">
+                            <i class="bi bi-filter"></i> Filtrar
+                        </button>
+                    </div>
+                    <button class="btn btn-outline-dark btn-sm ms-2" onclick="window.print()">
+                        <i class="bi bi-printer"></i>
+                    </button>
+                </div>
+            </nav>
+
+            <div class="container-fluid py-4 px-4">
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="card shadow-sm kpi-card kpi-ebitda">
+                            <div class="card-body">
+                                <h6 class="text-uppercase text-muted small fw-bold">EBITDA (Lajida)</h6>
+                                <h3 class="fw-bold mb-0 text-dark" id="kpiEbitda">R$ 0,00</h3>
+                                <small class="text-muted" id="kpiMargemEbitda">Margem: 0%</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card shadow-sm kpi-card kpi-lucro">
+                            <div class="card-body">
+                                <h6 class="text-uppercase text-muted small fw-bold">Lucro Líquido</h6>
+                                <h3 class="fw-bold mb-0 text-success" id="kpiLucro">R$ 0,00</h3>
+                                <small class="text-muted" id="kpiMargemLiquida">Margem: 0%</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card shadow-sm kpi-card kpi-margem">
+                            <div class="card-body">
+                                <h6 class="text-uppercase text-muted small fw-bold">Custos + Desp. Fixas</h6>
+                                <h3 class="fw-bold mb-0 text-secondary" id="kpiCustosFixos">R$ 0,00</h3>
+                                <small class="text-muted">Total Fixo Operacional</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card card-dre">
+                    <div class="card-header bg-white py-3 border-bottom">
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-table"></i> Demonstrativo do Resultado</h5>
+                        <p class="mb-0 small text-muted">Valores consolidados pelo regime de caixa (data de pagamento).</p>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table-dre">
+                                <thead>
+                                    <tr class="bg-light">
+                                        <th class="ps-3">DESCRIÇÃO DA CONTA</th>
+                                        <th class="col-valor">VALOR (R$)</th>
+                                        <th class="col-av">AV %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabelaDreBody">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light text-center small text-muted">
+                        &copy; 2026 Âncora Consultoria - Documento Confidencial
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script src="lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const DB_KEY = 'ancora_empresas';
+        const urlParams = new URLSearchParams(window.location.search);
+        const clientId = urlParams.get('id');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if(!clientId) { alert("Empresa não selecionada."); window.location.href='clientes.html'; return; }
+            document.getElementById('sidebarToggle').addEventListener('click', e => { e.preventDefault(); document.body.classList.toggle('sb-sidenav-toggled'); });
+            
+            // Define Mês Atual como Padrão
+            const hoje = new Date();
+            const ano = hoje.getFullYear();
+            const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+            document.getElementById('mesInicio').value = `${ano}-${mes}`;
+            document.getElementById('mesFim').value = `${ano}-${mes}`;
+
+            carregarDados();
+        });
+
+        function getDB() { return JSON.parse(localStorage.getItem(DB_KEY)) || []; }
+        function irPara(pg) { window.location.href = `${pg}?id=${clientId}`; }
+
+        function carregarDados() {
+            const db = getDB();
+            const empresa = db.find(c => c.id === clientId);
+            if(empresa) document.getElementById('headerEmpresa').innerText = empresa.empresa;
+            gerarDRE();
+        }
+
+        // --- ALGORITMO DRE (COM DETALHAMENTO DE DEPRECIAÇÃO) ---
+        function gerarDRE() {
+            const db = getDB();
+            const empresa = db.find(c => c.id === clientId);
+            if(!empresa || !empresa.financeiro) return;
+
+            const inicio = document.getElementById('mesInicio').value;
+            const fim = document.getElementById('mesFim').value;
+
+            // Filtro de Data
+            const lancs = empresa.financeiro.filter(l => 
+                l.data.slice(0, 7) >= inicio && 
+                l.data.slice(0, 7) <= fim
+            );
+
+            // Adicionado 'dep' (Depreciação) na estrutura de detalhes
+            let DRE = {
+                receitaBruta: 0, deducoes: 0, custosVar: 0, custosFixos: 0, 
+                despesasVar: 0, despesasFixas: 0, receitaFin: 0, despesaFin: 0, depreciacao: 0,
+                detalhes: { 
+                    rec: {}, ded: {}, cv: {}, cf: {}, dv: {}, df: {}, rf: {}, dfn: {}, 
+                    dep: {} // <-- Novo container para subcategorias de depreciação
+                }
+            };
+
+            // Classificação
+            lancs.forEach(l => {
+                const val = l.valor;
+                const cat = l.categoria; 
+                const sub = l.subcategoria || '-';
+                const catLower = cat.toLowerCase();
+                
+                if (l.tipo === 'Receita') {
+                    if (catLower.includes('financeira') || catLower.includes('aplicação')) {
+                        DRE.receitaFin += val;
+                        addDetalhe(DRE.detalhes.rf, cat, sub, val);
+                    } else {
+                        DRE.receitaBruta += val;
+                        addDetalhe(DRE.detalhes.rec, cat, sub, val);
+                    }
+                } 
+                else {
+                    // 1. Deduções
+                    if (catLower.includes('imposto') || catLower.includes('simples') || catLower.includes('taxas')) {
+                        DRE.deducoes += val;
+                        addDetalhe(DRE.detalhes.ded, cat, sub, val);
+                    }
+                    // 2. Financeiras
+                    else if (catLower.includes('banco') || catLower.includes('juros') || catLower.includes('financeira')) {
+                        DRE.despesaFin += val;
+                        addDetalhe(DRE.detalhes.dfn, cat, sub, val);
+                    }
+                    // 3. Depreciação / Amortização (CORREÇÃO AQUI)
+                    else if (catLower.includes('depreciação') || catLower.includes('amortização')) {
+                        DRE.depreciacao += val;
+                        addDetalhe(DRE.detalhes.dep, cat, sub, val); // Agora captura os detalhes
+                    }
+                    // 4. Operacional
+                    else {
+                        const nat = l.natureza || 'Despesa';
+                        const comp = l.comportamento || 'Fixa';
+
+                        if (nat === 'Custo') {
+                            if (comp === 'Variavel') { DRE.custosVar += val; addDetalhe(DRE.detalhes.cv, cat, sub, val); }
+                            else { DRE.custosFixos += val; addDetalhe(DRE.detalhes.cf, cat, sub, val); }
+                        } else {
+                            if (comp === 'Variavel') { DRE.despesasVar += val; addDetalhe(DRE.detalhes.dv, cat, sub, val); }
+                            else { DRE.despesasFixas += val; addDetalhe(DRE.detalhes.df, cat, sub, val); }
+                        }
+                    }
+                }
+            });
+
+            // Resultados
+            const receitaLiquida = DRE.receitaBruta - DRE.deducoes;
+            const margemContribuicao = receitaLiquida - DRE.custosVar;
+            const resultadoOperacional = margemContribuicao - DRE.custosFixos - DRE.despesasFixas - DRE.despesasVar;
+            const ebitda = resultadoOperacional + DRE.depreciacao; // Estorna para achar o EBITDA
+            const ebit = resultadoOperacional; // O Resultado Operacional (sem estorno) já é o EBIT contabilmente se considerarmos que depreciacao entrou como custo/desp. 
+            // AJUSTE LÓGICO: No nosso loop, 'depreciacao' NÃO entrou em custos/despesas operacionais.
+            // Logo, 'resultadoOperacional' calculado acima é na verdade o EBITDA.
+            // Vamos corrigir a nomenclatura para ficar contabilmente perfeito:
+            
+            const EBITDA_REAL = receitaLiquida - DRE.custosVar - DRE.custosFixos - DRE.despesasVar - DRE.despesasFixas;
+            const EBIT_REAL = EBITDA_REAL - DRE.depreciacao;
+            const lucroLiquido = EBIT_REAL + DRE.receitaFin - DRE.despesaFin;
+
+            // --- RENDERIZAÇÃO ---
+            const tbody = document.getElementById('tabelaDreBody');
+            tbody.innerHTML = '';
+
+            const R = (desc, val, estilo = '', nivel = 0) => {
+                const av = (DRE.receitaBruta > 0) ? (val / DRE.receitaBruta * 100).toFixed(1) + '%' : '-';
+                let indentClass = nivel === 1 ? 'indent-cat' : (nivel === 2 ? 'indent-sub' : '');
+                let corVal = 'text-dark';
+                if (val < 0) corVal = 'text-danger';
+                else if (estilo.includes('receita') || estilo.includes('lucro')) corVal = 'text-success';
+
+                let valFormat = val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                if(desc.includes('(-)') || desc.includes('Imposto') || desc.includes('Custo') || desc.includes('Despesa')) {
+                     valFormat = `(${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`;
+                }
+
+                return `<tr class="${estilo}"><td class="${indentClass}">${desc}</td><td class="col-valor ${corVal}">${valFormat}</td><td class="col-av">${desc.includes('AV') ? '' : av}</td></tr>`;
+            };
+
+            const RenderGroup = (objDetalhes) => {
+                let html = '';
+                for(let [cat, info] of Object.entries(objDetalhes)) {
+                    html += R(cat, info.total, '', 1);
+                    for(let [sub, sVal] of Object.entries(info.subs)) html += R(sub, sVal, '', 2);
+                }
+                return html;
+            };
+
+            let html = '';
+            
+            html += R('(=) RECEITA BRUTA OPERACIONAL', DRE.receitaBruta, 'dre-receita fw-bold');
+            html += RenderGroup(DRE.detalhes.rec);
+            
+            html += R('(-) Deduções e Impostos', DRE.deducoes, 'dre-deducao');
+            html += RenderGroup(DRE.detalhes.ded);
+            
+            html += R('(=) RECEITA LÍQUIDA', receitaLiquida, 'dre-resultado');
+            
+            html += R('(-) Custos Variáveis', DRE.custosVar, 'dre-deducao');
+            html += RenderGroup(DRE.detalhes.cv);
+
+            html += R('(=) MARGEM DE CONTRIBUIÇÃO', margemContribuicao, 'dre-resultado');
+            
+            html += R('(-) Custos Fixos', DRE.custosFixos, 'dre-deducao');
+            html += RenderGroup(DRE.detalhes.cf);
+            html += R('(-) Despesas Variáveis', DRE.despesasVar, 'dre-deducao');
+            html += RenderGroup(DRE.detalhes.dv);
+            html += R('(-) Despesas Fixas', DRE.despesasFixas, 'dre-deducao');
+            html += RenderGroup(DRE.detalhes.df);
+            
+            html += '<tr><td colspan="3" class="bg-light p-1"></td></tr>';
+
+            // EBITDA
+            html += R('(=) EBITDA (Lajida)', EBITDA_REAL, 'dre-indicador-chave');
+            
+            // DEPRECIAÇÃO (Detalhada)
+            if(DRE.depreciacao > 0) {
+                html += R('(-) Depreciação / Amortização', DRE.depreciacao, 'dre-deducao');
+                html += RenderGroup(DRE.detalhes.dep); // RENDERIZA AS SUBCATEGORIAS AQUI
+            }
+            
+            // EBIT
+            html += R('(=) EBIT (Resultado Operacional)', EBIT_REAL, 'dre-resultado');
+
+            if(DRE.receitaFin > 0 || DRE.despesaFin > 0) {
+                html += '<tr><td colspan="3" class="fw-bold text-muted mt-2 border-0 small ps-3">Resultado Financeiro</td></tr>';
+                if(DRE.receitaFin > 0) { html += R('(+) Receitas Financeiras', DRE.receitaFin, 'text-success'); html += RenderGroup(DRE.detalhes.rf); }
+                if(DRE.despesaFin > 0) { html += R('(-) Despesas Financeiras', DRE.despesaFin, 'text-danger'); html += RenderGroup(DRE.detalhes.dfn); }
+            }
+            
+            const classeFinal = lucroLiquido >= 0 ? 'dre-lucro' : 'dre-prejuizo';
+            const labelFinal = lucroLiquido >= 0 ? '(=) LUCRO LÍQUIDO' : '(=) PREJUÍZO LÍQUIDO';
+            html += R(labelFinal, lucroLiquido, classeFinal);
+
+            tbody.innerHTML = html;
+
+            // KPIs
+            document.getElementById('kpiEbitda').innerText = EBITDA_REAL.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('kpiLucro').innerText = lucroLiquido.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('kpiCustosFixos').innerText = (DRE.custosFixos + DRE.despesasFixas).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+            const mEbitda = DRE.receitaBruta > 0 ? (EBITDA_REAL / DRE.receitaBruta * 100).toFixed(1) : 0;
+            const mLiquida = DRE.receitaBruta > 0 ? (lucroLiquido / DRE.receitaBruta * 100).toFixed(1) : 0;
+            
+            document.getElementById('kpiMargemEbitda').innerText = `Margem: ${mEbitda}%`;
+            document.getElementById('kpiMargemLiquida').innerText = `Margem: ${mLiquida}%`;
+            document.getElementById('kpiLucro').className = `fw-bold mb-0 ${lucroLiquido >= 0 ? 'text-success' : 'text-danger'}`;
+        }
+
+        // Função Auxiliar de Agregação
+        function addDetalhe(groupObj, cat, sub, val) {
+            // Inicializa Categoria
+            if (!groupObj[cat]) groupObj[cat] = { total: 0, subs: {} };
+            groupObj[cat].total += val;
+            
+            // Inicializa Subcategoria
+            if (!groupObj[cat].subs[sub]) groupObj[cat].subs[sub] = 0;
+            groupObj[cat].subs[sub] += val;
+        }
+    </script>
+</body>
+</html>

@@ -99,6 +99,9 @@
                 <a href="#" class="list-group-item list-group-item-action active">
                     <i class="bi bi-cash-stack me-2"></i> Fluxo de Caixa
                 </a>
+                <a href="#" onclick="irPara('dre.html')" class="list-group-item list-group-item-action">
+                    <i class="bi bi-file-earmark-spreadsheet me-2"></i> DRE Gerencial
+                </a>
                 <a href="#" class="list-group-item list-group-item-action text-muted" style="cursor: not-allowed;">
                     <i class="bi bi-graph-up-arrow me-2"></i> Indicadores
                 </a>
@@ -257,8 +260,49 @@
         let categoriaEmEdicao = null;
         let tipoConfigAtual = 'Receita';
 
-        const DEFAULT_REC = ["Receita Operacional", "Receita Recorrente", "Receita Financeira", "Receita Patrimonial", "Receita Não Operacional", "Outras Receitas"];
-        const DEFAULT_SAI = ["Insumos administrativos", "Estrutura básica", "Impostos e taxas", "Recursos Humanos", "Rendimento Sócios/Pró-labore", "Prestadores de serviço", "Banco(s)", "Matéria prima", "Marketing e vendas", "Treinamento e desenvolvimento", "Máquinas e equipamentos", "Transporte/Frota"];
+        // --- CONSTANTES DE INICIALIZAÇÃO ---
+        
+        // Agora Receitas é um OBJETO para incluir subcategorias
+        const DEFAULT_REC_DATA = {
+            "Receita Operacional": [
+                "Venda de produtos", "Prestação de serviços", "Projetos fechados", 
+                "Serviços avulsos", "Venda no balcão", "Venda B2B", 
+                "Venda B2C", "Personalizações", "Taxas operacionais", "Serviços adicionais (upsell)"
+            ],
+            "Receita Recorrente": [
+                "Mensalidades", "Assinaturas", "Contratos fixos", "Planos de serviço", 
+                "Licenças de uso", "Manutenção recorrente", "Suporte técnico mensal", "Retainers / fee mensal"
+            ],
+            "Receita Financeira": [
+                "Juros recebidos", "Rendimentos de aplicações", "Descontos financeiros obtidos", 
+                "Cashback", "Variação cambial positiva", "Multas recebidas", "Correção monetária"
+            ],
+            "Receita Patrimonial": [
+                "Aluguel de imóveis", "Locação de equipamentos", "Arrendamento mercantil", 
+                "Royalties recebidos", "Licenciamento de marca", "Cessão de uso", "Franquias"
+            ],
+            "Receita Não Operacional": [
+                "Venda de ativo imobilizado", "Venda de veículos", "Venda de equipamentos usados", 
+                "Indenizações", "Recuperação de prejuízos", "Ajustes contábeis positivos", "Ganho na baixa de ativos"
+            ],
+            "Outras Receitas": [
+                "Bonificações", "Prêmios", "Incentivos governamentais", "Subvenções", 
+                "Doações recebidas", "Patrocínios", "Outras receitas diversas"
+            ]
+        };
+
+        const DEFAULT_SAI = [
+            "Insumos Administrativos", "Estrutura Básica", "Impostos e Taxas", "Recursos Humanos", 
+            "Rendimento Sócios", "Prestadores de Serviço", "Banco(s)", "Matéria-Prima", 
+            "Marketing e Vendas", "Treinamento e Desenvolvimento", "Máquinas e equipamentos", "Transporte/Frota", "Amortização/Depreciação"
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if(!clientId) { alert("Erro: ID não fornecido"); return; }
+            document.getElementById('sidebarToggle').addEventListener('click', e => { e.preventDefault(); document.body.classList.toggle('sb-sidenav-toggled'); });
+            document.getElementById('filtroMes').value = new Date().toISOString().slice(0, 7);
+            carregarDadosEmpresa();
+        });
 
         document.addEventListener('DOMContentLoaded', () => {
             if(!clientId) { alert("Erro de ID"); return; }
@@ -272,26 +316,59 @@
         function irPara(pg) { window.location.href = `${pg}?id=${clientId}`; }
 
         function carregarDadosEmpresa() {
-            const db = getDB(); const index = db.findIndex(c => c.id === clientId);
+            const db = getDB();
+            const index = db.findIndex(c => c.id === clientId);
             if(index === -1) return;
             let empresa = db[index];
             document.getElementById('headerEmpresa').innerText = empresa.empresa;
 
             if(!empresa.financeiro) empresa.financeiro = [];
-            if(!empresa.configCategorias || empresa.configCategorias.length === 0) {
-                empresa.configCategorias = [];
-                DEFAULT_REC.forEach(n => empresa.configCategorias.push({id:Date.now()+Math.random(), nome:n, tipo:'Receita', isDefault:true, subcategorias:[]}));
-                DEFAULT_SAI.forEach(n => empresa.configCategorias.push({id:Date.now()+Math.random(), nome:n, tipo:'Saida', isDefault:true, subcategorias:[]}));
-                db[index] = empresa; saveDB(db);
-            } else {
-                let mudou = false;
-                empresa.configCategorias.forEach(c => { if(!c.tipo) { c.tipo = 'Saida'; mudou = true; } });
-                if(mudou) { db[index] = empresa; saveDB(db); }
+            if(!empresa.configCategorias) empresa.configCategorias = [];
+            
+            // --- SINCRONIZAÇÃO E PROTEÇÃO DE PADRÕES ---
+            
+            // 1. Atualizar RECEITAS
+            for (const [catNome, subsPadrao] of Object.entries(DEFAULT_REC_DATA)) {
+                let cat = empresa.configCategorias.find(c => c.nome === catNome && c.tipo === 'Receita');
+                
+                if (!cat) {
+                    cat = { id: Date.now()+Math.random(), nome: catNome, tipo: 'Receita', isDefault: true, subcategorias: [] };
+                    empresa.configCategorias.push(cat);
+                } else {
+                    // Garante que a categoria pai seja padrão
+                    cat.isDefault = true; 
+                }
+
+                // Sincroniza Subcategorias
+                subsPadrao.forEach(subNome => {
+                    let sub = cat.subcategorias.find(s => s.nome === subNome);
+                    if (sub) {
+                        // Se já existe, MARCA COMO PADRÃO (Protege)
+                        sub.isDefault = true;
+                    } else {
+                        // Se não existe, cria protegida
+                        cat.subcategorias.push({ nome: subNome, isDefault: true });
+                    }
+                });
             }
+
+            // 2. Atualizar SAÍDAS (Cria categorias pai se faltar)
+            DEFAULT_SAI.forEach(catNome => {
+                let cat = empresa.configCategorias.find(c => c.nome === catNome && c.tipo === 'Saida');
+                if (!cat) {
+                    empresa.configCategorias.push({ id: Date.now()+Math.random(), nome: catNome, tipo: 'Saida', isDefault: true, subcategorias: [] });
+                } else {
+                    cat.isDefault = true;
+                }
+            });
+            
+            db[index] = empresa;
+            saveDB(db);
             carregarLancamentos();
         }
 
         // --- LÓGICA DE DADOS DRE (SEPARADA) ---
+        // --- LÓGICA DE DADOS DRE (ATUALIZADA) ---
         function calcularDadosDRE(ano) {
             const db = getDB();
             const empresa = db.find(c => c.id === clientId);
@@ -309,6 +386,9 @@
             let despTotalMes = Array(12).fill(0);
 
             lancs.forEach(l => {
+                // --- FILTRO NOVO: Ignora itens não-caixa na planilha anual ---
+                if (l.categoria === "Amortização/Depreciação") return; 
+
                 const mes = parseInt(l.data.split('-')[1]) - 1;
                 let gKey = '';
                 if(l.tipo === 'Receita') {
@@ -538,11 +618,28 @@
             document.getElementById('catSelecionadaNome').innerText = c.nome;
             renderConfigSubs(c);
         }
-        function renderConfigSubs(c) {
-            const ul=document.getElementById('listaSubcategoriasConfig'); ul.innerHTML='';
-            c.subcategorias.forEach((s,i)=>{
-                let bdg=''; if(c.tipo==='Saida') bdg = `<small class="badge bg-secondary ms-2">${s.natureza}</small><small class="badge bg-light text-dark border ms-1">${s.comportamento}</small>`;
-                ul.innerHTML+=`<li class="list-group-item d-flex justify-content-between"><div>${s.nome} ${bdg}</div><i class="bi bi-x-circle text-danger cursor-pointer" onclick="delConfigSub(${i})"></i></li>`;
+   function renderConfigSubs(c) {
+            const ul = document.getElementById('listaSubcategoriasConfig');
+            ul.innerHTML = '';
+            
+            c.subcategorias.forEach((s, i) => {
+                let extraInfo = '';
+                
+                // Badges de Saída
+                if(c.tipo === 'Saida') {
+                    extraInfo = `<small class="badge bg-secondary ms-2">${s.natureza||'-'}</small><small class="badge bg-light text-dark border ms-1">${s.comportamento||'-'}</small>`;
+                }
+
+                // Ícone de Ação (Lixeira ou Cadeado)
+                const actionIcon = s.isDefault 
+                    ? '<i class="bi bi-lock-fill text-muted" title="Item Padrão (Não pode excluir)"></i>' 
+                    : `<i class="bi bi-trash text-danger cursor-pointer" onclick="delConfigSub(${i})"></i>`;
+
+                ul.innerHTML += `
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>${s.nome} ${extraInfo}</div>
+                        ${actionIcon}
+                    </li>`;
             });
         }
         function addCategoria() {
@@ -560,8 +657,23 @@
             if(tipoConfigAtual==='Saida'){ nova.natureza=document.getElementById('novaSubNatureza').value; nova.comportamento=document.getElementById('novaSubComportamento').value; }
             cat.subcategorias.push(nova); saveDB(db); document.getElementById('novaSubNome').value=''; renderConfigSubs(cat);
         }
-        function delConfigSub(idx){ const db=getDB(),i=db.findIndex(c=>c.id===clientId), cat=db[i].configCategorias.find(c=>c.id==categoriaEmEdicao); cat.subcategorias.splice(idx,1); saveDB(db); renderConfigSubs(cat); }
+        function delConfigSub(subIdx) {
+            const db = getDB();
+            const idx = db.findIndex(c => c.id === clientId);
+            const cat = db[idx].configCategorias.find(c => c.id == categoriaEmEdicao);
+            
+            // Verificação de Segurança
+            if(cat.subcategorias[subIdx].isDefault) {
+                alert("Esta é uma subcategoria padrão do sistema e não pode ser excluída.");
+                return;
+            }
 
+            if(confirm("Excluir subcategoria?")) {
+                cat.subcategorias.splice(subIdx, 1);
+                saveDB(db);
+                renderConfigSubs(cat);
+            }
+        }
         function carregarCategoriasSelect() {
             const sel=document.getElementById('lancCategoria'), sub=document.getElementById('lancSubcategoria');
             const tipo=document.querySelector('input[name="tipoMov"]:checked').value;
@@ -569,11 +681,35 @@
             getDB().find(c=>c.id===clientId).configCategorias.filter(c=>c.tipo===tipo).forEach(c=> sel.innerHTML+=`<option value="${c.id}">${c.nome}</option>`);
         }
         function carregarSubcategoriasSelect() {
-            const id=document.getElementById('lancCategoria').value, sub=document.getElementById('lancSubcategoria');
-            if(!id){sub.disabled=true;return;}
-            const c=getDB().find(x=>x.id===clientId).configCategorias.find(x=>x.id==id);
-            sub.innerHTML='<option value="">Selecione...</option>'; sub.disabled=false;
-            c.subcategorias.forEach(s=> { const o=document.createElement('option'); o.text=s.nome; if(c.tipo==='Saida'){ o.setAttribute('data-nat',s.natureza); o.setAttribute('data-comp',s.comportamento); } sub.add(o); });
+            const id = document.getElementById('lancCategoria').value;
+            const sub = document.getElementById('lancSubcategoria');
+            
+            if(!id) {
+                sub.disabled = true;
+                sub.innerHTML = '<option value="">Selecione Categoria...</option>';
+                return;
+            }
+            
+            const c = getDB().find(x => x.id === clientId).configCategorias.find(x => x.id == id);
+            
+            sub.innerHTML = '<option value="">Selecione...</option>';
+            sub.disabled = false;
+            
+            if (c.subcategorias && c.subcategorias.length > 0) {
+                c.subcategorias.forEach(s => { 
+                    const o = document.createElement('option'); 
+                    o.text = s.nome; 
+                    
+                    // Só adiciona atributos se for Saída (Receita não usa Natureza/Comportamento no cadastro)
+                    if(c.tipo === 'Saida'){ 
+                        o.setAttribute('data-nat', s.natureza || 'Despesa'); 
+                        o.setAttribute('data-comp', s.comportamento || 'Fixa'); 
+                    } 
+                    sub.add(o); 
+                });
+            } else {
+                sub.innerHTML = '<option value="">Sem subcategorias (Cadastre na engrenagem)</option>';
+            }
         }
         
         function abrirModalInfoJson() { new bootstrap.Modal(document.getElementById('modalInfoJson')).show(); }
@@ -589,24 +725,81 @@
         }
         
         function carregarLancamentos() {
-            const db=getDB(), emp=db.find(c=>c.id===clientId), mes=document.getElementById('filtroMes').value;
-            const tb=document.getElementById('tabelaLancamentos'); tb.innerHTML='';
-            const fs=emp.financeiro.filter(l=>l.data.startsWith(mes));
-            let r=0, s=0;
-            if(fs.length===0) document.getElementById('emptyState').classList.remove('d-none');
-            else {
-                document.getElementById('emptyState').classList.add('d-none'); fs.sort((a,b)=>new Date(b.data)-new Date(a.data));
-                fs.forEach(l=>{
-                    if(l.tipo==='Receita')r+=l.valor; else s+=l.valor;
-                    const bTipo=l.tipo==='Receita'?'<span class="badge badge-receita">Receita</span>':`<span class="badge bg-secondary badge-natureza">${l.natureza}</span>`;
-                    const cor=l.tipo==='Receita'?'text-success':'text-danger';
-                    tb.innerHTML+=`<tr><td class="ps-4">${l.data.split('-').reverse().join('/')}</td><td class="fw-bold text-dark">${l.descricao}</td><td><small class="d-block text-muted">${l.categoria}</small>${l.subcategoria}</td><td>${bTipo}</td><td class="text-end pe-4 fw-bold ${cor}">${l.tipo==='Saida'?'-':''} ${l.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</td><td class="text-end"><i class="bi bi-trash text-danger cursor-pointer" onclick="excluirLancamento(${l.id})"></i></td></tr>`;
+            const db = getDB();
+            const empresa = db.find(c => c.id === clientId);
+            const mes = document.getElementById('filtroMes').value;
+            const tb = document.getElementById('tabelaLancamentos');
+            tb.innerHTML = '';
+
+            const fs = empresa.financeiro.filter(l => l.data.startsWith(mes));
+            let r = 0, s = 0;
+
+            if(fs.length === 0) {
+                document.getElementById('emptyState').classList.remove('d-none');
+            } else {
+                document.getElementById('emptyState').classList.add('d-none');
+                fs.sort((a,b) => new Date(b.data) - new Date(a.data));
+
+                fs.forEach(l => {
+                    // Verifica se é item não-caixa (Contábil)
+                    const isNonCash = l.categoria === "Amortização/Depreciação";
+
+                    // SOMAS (Lógica de Caixa)
+                    if(l.tipo === 'Receita') {
+                        r += l.valor; 
+                    } else {
+                        // Só soma nas saídas se NÃO for depreciação
+                        if (!isNonCash) {
+                            s += l.valor;
+                        }
+                    }
+
+                    // VISUAL
+                    let bTipo = '';
+                    let cor = '';
+                    let rowStyle = '';
+                    let valStyle = '';
+
+                    if (l.tipo === 'Receita') {
+                        bTipo = '<span class="badge badge-receita">Receita</span>';
+                        cor = 'text-success';
+                    } else if (isNonCash) {
+                        // Estilo especial para Depreciação
+                        bTipo = '<span class="badge bg-secondary">Contábil</span>';
+                        cor = 'text-muted'; // Valor cinza
+                        rowStyle = 'background-color: #f8f9fa; font-style: italic;'; // Linha inteira diferenciada
+                        valStyle = 'text-decoration: line-through; opacity: 0.7;'; // Riscado para indicar que não soma
+                    } else {
+                        bTipo = `<span class="badge bg-secondary badge-natureza">${l.natureza}</span>`;
+                        cor = 'text-danger';
+                    }
+
+                    // Renderiza Linha
+                    tb.innerHTML += `
+                        <tr style="${rowStyle}">
+                            <td class="ps-4">${l.data.split('-').reverse().join('/')}</td>
+                            <td class="fw-bold text-dark">${l.descricao}</td>
+                            <td>
+                                <small class="d-block text-muted">${l.categoria}</small>
+                                ${l.subcategoria}
+                            </td>
+                            <td>${bTipo}</td>
+                            <td class="text-end pe-4 fw-bold ${cor}" style="${valStyle}">
+                                ${l.tipo === 'Saida' ? '-' : ''} ${l.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+                            </td>
+                            <td class="text-end">
+                                <i class="bi bi-trash text-danger cursor-pointer" onclick="excluirLancamento(${l.id})"></i>
+                            </td>
+                        </tr>`;
                 });
             }
+
             document.getElementById('totalReceitas').innerText = r.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
             document.getElementById('totalSaidas').innerText = s.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-            const sal=r-s; document.getElementById('saldoMes').innerText = sal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-            document.getElementById('saldoMes').className = `fw-bold mb-0 ${sal>=0?'text-success':'text-danger'}`;
+            
+            const sal = r - s;
+            document.getElementById('saldoMes').innerText = sal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+            document.getElementById('saldoMes').className = `fw-bold mb-0 ${sal >= 0 ? 'text-success' : 'text-danger'}`;
         }
 
         // --- FUNÇÃO DE RESET TOTAL (SEGURANÇA MÁXIMA) ---
