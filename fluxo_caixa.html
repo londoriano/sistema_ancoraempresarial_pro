@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fluxo de Caixa & DRE | Âncora</title>
+    <title>Fluxo de Caixa | Âncora</title>
     <link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link href="lib/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
     <style>
@@ -150,7 +150,8 @@
                         <button class="nav-link active" id="tab-extrato" data-bs-toggle="tab" data-bs-target="#view-extrato">Extrato Mensal</button>
                     </li>
                     <li class="nav-item">
-                        <button class="nav-link" id="tab-anual" data-bs-toggle="tab" data-bs-target="#view-anual" onclick="carregarVisaoAnual()">DRE Gerencial (Anual)</button>
+                        <button class="nav-link" id="tab-anual" data-bs-toggle="tab" data-bs-target="#view-anual" onclick="carregarVisaoAnual()">Visão Anual (Planilha)
+                        </button>                    
                     </li>
                 </ul>
 
@@ -189,16 +190,14 @@
                                     <span class="mx-3 fw-bold fs-5" id="anoVisaoAnual">2026</span>
                                     <button class="btn btn-sm btn-outline-secondary" onclick="mudarAno(1)">Próximo <i class="bi bi-chevron-right"></i></button>
                                 </div>
-                                <button class="btn btn-success btn-sm fw-bold" onclick="exportarDRECSV()">
-                                    <i class="bi bi-file-earmark-spreadsheet"></i> Baixar CSV Completo
-                                </button>
+                             <button class="btn btn-success btn-sm fw-bold" onclick="exportarFluxoCSV()"> <i class="bi bi-file-earmark-spreadsheet"></i> Baixar Planilha CSV</button>
                             </div>
                             
                             <div class="table-responsive-dre">
                                 <table class="table-dre">
                                     <thead>
                                         <tr>
-                                            <th class="sticky-col text-start ps-3">CONTA / CATEGORIA</th>
+                                            <th class="sticky-col text-start ps-3">FLUXO DE CAIXA</th>
                                             <th class="text-center">JAN</th>
                                             <th class="text-center">FEV</th>
                                             <th class="text-center">MAR</th>
@@ -367,27 +366,25 @@
             carregarLancamentos();
         }
 
-        // --- LÓGICA DE DADOS DRE (SEPARADA) ---
-        // --- LÓGICA DE DADOS DRE (ATUALIZADA) ---
-        function calcularDadosDRE(ano) {
+        function calcularDadosFluxo(ano) { // Antes era calcularDadosDRE
             const db = getDB();
             const empresa = db.find(c => c.id === clientId);
             const lancs = empresa.financeiro.filter(l => l.data.startsWith(ano.toString()));
             
             const grupos = {
-                'RECEITAS': { cats: {}, cor: 'val-pos', tipo: 'R' },
-                'CUSTOS VARIÁVEIS': { cats: {}, cor: 'val-neg', tipo: 'D' },
-                'CUSTOS FIXOS': { cats: {}, cor: 'val-neg', tipo: 'D' },
-                'DESPESAS VARIÁVEIS': { cats: {}, cor: 'val-neg', tipo: 'D' },
-                'DESPESAS FIXAS': { cats: {}, cor: 'val-neg', tipo: 'D' }
+                'RECEITAS': { cats: {}, cor: 'val-pos' },
+                'CUSTOS VARIÁVEIS': { cats: {}, cor: 'val-neg' },
+                'CUSTOS FIXOS': { cats: {}, cor: 'val-neg' },
+                'DESPESAS VARIÁVEIS': { cats: {}, cor: 'val-neg' },
+                'DESPESAS FIXAS': { cats: {}, cor: 'val-neg' }
             };
 
             let recBrutaMes = Array(12).fill(0);
             let despTotalMes = Array(12).fill(0);
 
             lancs.forEach(l => {
-                // --- FILTRO NOVO: Ignora itens não-caixa na planilha anual ---
-                if (l.categoria === "Amortização/Depreciação") return; 
+                // FILTRO IMPORTANTE: Remove itens não-caixa desta visualização
+                if (l.categoria === "Amortização/Depreciação") return;
 
                 const mes = parseInt(l.data.split('-')[1]) - 1;
                 let gKey = '';
@@ -413,6 +410,7 @@
         }
 
         // --- RENDERIZAÇÃO NA TELA ---
+        // --- RENDERIZAÇÃO DA PLANILHA (RENOMEADA) ---
         function mudarAno(delta) { anoAtualVisao += delta; carregarVisaoAnual(); }
         
         function carregarVisaoAnual() {
@@ -420,47 +418,48 @@
             const tbody = document.getElementById('tabelaAnualBody');
             tbody.innerHTML = '';
 
-            const dados = calcularDadosDRE(anoAtualVisao);
+            // Chama a nova função renomeada
+            const dados = calcularDadosFluxo(anoAtualVisao);
             const { grupos, recBrutaMes, despTotalMes } = dados;
 
             // 1. Receitas
-            renderGrupoHTML('RECEITAS', grupos['RECEITAS'], recBrutaMes, despTotalMes, true);
+            renderGrupoFluxo('RECEITAS', grupos['RECEITAS'], recBrutaMes, despTotalMes, true);
 
-            // 2. Despesas
+            // 2. Saídas
             ['CUSTOS VARIÁVEIS', 'CUSTOS FIXOS', 'DESPESAS VARIÁVEIS', 'DESPESAS FIXAS'].forEach(g => {
-                renderGrupoHTML(g, grupos[g], recBrutaMes, despTotalMes, false);
+                renderGrupoFluxo(g, grupos[g], recBrutaMes, despTotalMes, false);
             });
 
-            // 3. Totais e Resultado
-            renderLinhaHTML('TOTAL CUSTOS E DESPESAS', despTotalMes, 'row-total-saidas val-neg', true, recBrutaMes, despTotalMes, false);
+            // 3. Resultado
+            renderLinhaFluxo('TOTAL DE SAÍDAS', despTotalMes, 'row-total-saidas val-neg', true, recBrutaMes, despTotalMes, false);
             const saldoMes = recBrutaMes.map((v, i) => v - despTotalMes[i]);
-            renderLinhaHTML('RESULTADO OPERACIONAL', saldoMes, 'row-saldo', true, recBrutaMes, despTotalMes, true);
+            renderLinhaFluxo('SALDO LÍQUIDO DE CAIXA', saldoMes, 'row-saldo', true, recBrutaMes, despTotalMes, true);
         }
 
-        function renderGrupoHTML(gName, grupo, baseRec, baseDesp, isReceita) {
+        function renderGrupoFluxo(gName, grupo, baseRec, baseDesp, isReceita) {
             const temDados = Object.keys(grupo.cats).length > 0;
             if(!temDados && !isReceita) return;
 
-            renderLinhaHTML(gName, Array(12).fill(null), 'row-grupo ' + grupo.cor, false, baseRec, baseDesp, isReceita);
+            renderLinhaFluxo(gName, Array(12).fill(null), 'row-grupo ' + grupo.cor, false, baseRec, baseDesp, isReceita);
 
             for(const [catNome, subs] of Object.entries(grupo.cats)) {
                 let totalCat = Array(12).fill(0);
                 for(const vals of Object.values(subs)) vals.forEach((v,i) => totalCat[i] += v);
                 
-                // Categoria (Apenas Título)
-                renderLinhaHTML(catNome, Array(12).fill(null), `row-cat indent-cat ${grupo.cor}`, false, baseRec, baseDesp, isReceita);
+                // Categoria (Título)
+                renderLinhaFluxo(catNome, Array(12).fill(null), `row-cat indent-cat ${grupo.cor}`, false, baseRec, baseDesp, isReceita);
 
                 // Subcategorias
                 for(const [subNome, vals] of Object.entries(subs)) {
-                    renderLinhaHTML(subNome, vals, `row-sub indent-sub ${grupo.cor}`, true, baseRec, baseDesp, isReceita);
+                    renderLinhaFluxo(subNome, vals, `row-sub indent-sub ${grupo.cor}`, true, baseRec, baseDesp, isReceita);
                 }
                 
                 // Total Categoria (Rodapé)
-                renderLinhaHTML(`Total ${catNome}`, totalCat, `row-cat-total indent-total ${grupo.cor}`, true, baseRec, baseDesp, isReceita);
+                renderLinhaFluxo(`Total ${catNome}`, totalCat, `row-cat-total indent-total ${grupo.cor}`, true, baseRec, baseDesp, isReceita);
             }
         }
 
-        function renderLinhaHTML(titulo, valores, classeCSS, temValor, baseRec, baseDesp, isReceita) {
+        function renderLinhaFluxo(titulo, valores, classeCSS, temValor, baseRec, baseDesp, isReceita) {
             const tbody = document.getElementById('tabelaAnualBody');
             let cols = '';
             let totalAno = 0;
@@ -473,87 +472,61 @@
                 } else {
                     totalAno += v;
                     const valFmt = v !== 0 ? v.toLocaleString('pt-BR',{minimumFractionDigits:2}) : '-';
-                    
-                    // Tooltip
                     let av1 = (bRec[i] > 0) ? ((v/bRec[i])*100).toFixed(1) : '0.0';
                     let av2 = (bDesp[i] > 0 && !isReceita) ? ((v/bDesp[i])*100).toFixed(1) : '0.0';
-                    const tooltip = `Valor: R$ ${valFmt}\n% Receita: ${av1}%\n${!isReceita ? '% Despesa: '+av2+'%' : ''}`;
-                    
+                    const tooltip = `Valor: R$ ${valFmt}\n% Receita: ${av1}%\n${!isReceita ? '% Saída: '+av2+'%' : ''}`;
                     cols += `<td class="col-valor" title="${tooltip}">${valFmt}</td>`;
                 }
             });
 
             const totalFmt = temValor ? totalAno.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) : '';
-            
             const tr = document.createElement('tr');
-            
-            // --- ALTERAÇÃO AQUI: Detecta subcategoria e adiciona transparência ---
-            if (classeCSS.includes('row-sub')) {
-                tr.classList.add('tr-sub-opacity');
-            }
-            
+            if (classeCSS.includes('row-sub')) tr.classList.add('tr-sub-opacity');
             tr.innerHTML = `<td class="sticky-col ${classeCSS}">${titulo}</td>${cols}<td class="col-valor bg-secondary text-white fw-bold">${totalFmt}</td>`;
             tbody.appendChild(tr);
         }
 
-        // --- EXPORTAÇÃO CSV (PROFISSIONAL) ---
-        function exportarDRECSV() {
-            const dados = calcularDadosDRE(anoAtualVisao);
+        // --- EXPORTAÇÃO CSV (RENOMEADA) ---
+        function exportarFluxoCSV() {
+            const dados = calcularDadosFluxo(anoAtualVisao); // Chama a nova função
             const { grupos, recBrutaMes, despTotalMes } = dados;
             
             let csvContent = "data:text/csv;charset=utf-8,";
-            // Header
-            csvContent += "Conta / Categoria;Jan - Valor;Jan - %Rec;Jan - %Desp;Fev - Valor;Fev - %Rec;Fev - %Desp;Mar - Valor;Mar - %Rec;Mar - %Desp;Abr - Valor;Abr - %Rec;Abr - %Desp;Mai - Valor;Mai - %Rec;Mai - %Desp;Jun - Valor;Jun - %Rec;Jun - %Desp;Jul - Valor;Jul - %Rec;Jul - %Desp;Ago - Valor;Ago - %Rec;Ago - %Desp;Set - Valor;Set - %Rec;Set - %Desp;Out - Valor;Out - %Rec;Out - %Desp;Nov - Valor;Nov - %Rec;Nov - %Desp;Dez - Valor;Dez - %Rec;Dez - %Desp;TOTAL ANUAL\n";
+            csvContent += "Conta / Categoria;Jan;Fev;Mar;Abr;Mai;Jun;Jul;Ago;Set;Out;Nov;Dez;TOTAL ANUAL\n";
 
-            function addLinhaCSV(nome, valores, isRec) {
+            function addLinha(nome, valores) {
                 let linha = `"${nome}"`;
-                let totalAno = 0;
-                
-                valores.forEach((v, i) => {
-                    totalAno += v;
-                    const valStr = v.toFixed(2).replace('.', ',');
-                    
-                    // Cálculos
-                    let av1 = (recBrutaMes[i] > 0) ? ((v/recBrutaMes[i])*100).toFixed(2).replace('.', ',') + '%' : '-';
-                    let av2 = (!isRec && despTotalMes[i] > 0) ? ((v/despTotalMes[i])*100).toFixed(2).replace('.', ',') + '%' : '-';
-                    
-                    linha += `;${valStr};${av1};${av2}`;
-                });
-                linha += `;${totalAno.toFixed(2).replace('.', ',')}`;
+                let tot = 0;
+                valores.forEach(v => { tot+=v; linha += `;${v.toFixed(2).replace('.', ',')}`; });
+                linha += `;${tot.toFixed(2).replace('.', ',')}`;
                 csvContent += linha + "\n";
             }
 
             // Geração
             // 1. Receitas
-            addLinhaCSV("RECEITAS TOTAIS", recBrutaMes, true);
+             addLinha("RECEITAS TOTAIS", recBrutaMes);
             const grpRec = grupos['RECEITAS'];
             for(const [cat, subs] of Object.entries(grpRec.cats)) {
-                for(const [sub, vals] of Object.entries(subs)) {
-                    addLinhaCSV(`  ${cat} > ${sub}`, vals, true);
-                }
+                for(const [sub, vals] of Object.entries(subs)) { addLinha(`  ${cat} > ${sub}`, vals); }
             }
 
             // 2. Despesas
-            const ord = ['CUSTOS VARIÁVEIS', 'CUSTOS FIXOS', 'DESPESAS VARIÁVEIS', 'DESPESAS FIXAS'];
-            ord.forEach(g => {
-                addLinhaCSV(g, Array(12).fill(0), false); // Título
+            const ord = ['CUSTOS VARIÁVEIS', 'CUSTOS FIXOS', 'DESPESAS VARIÁVEIS', 'DESPESAS FIXAS'].forEach(g => {
+                addLinha(g, Array(12).fill(0));
                 const grp = grupos[g];
                 for(const [cat, subs] of Object.entries(grp.cats)) {
-                    for(const [sub, vals] of Object.entries(subs)) {
-                        addLinhaCSV(`  ${cat} > ${sub}`, vals, false);
-                    }
+                    for(const [sub, vals] of Object.entries(subs)) { addLinha(`  ${cat} > ${sub}`, vals); }
                 }
             });
 
             // 3. Resultado
             const saldoMes = recBrutaMes.map((v, i) => v - despTotalMes[i]);
-            addLinhaCSV("RESULTADO OPERACIONAL", saldoMes, true);
+            addLinha("SALDO FINAL", saldoMes);
 
-            // Download
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `DRE_Ancora_${anoAtualVisao}.csv`);
+            link.setAttribute("download", `Fluxo_Caixa_Ancora_${anoAtualVisao}.csv`); // Nome do arquivo alterado
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
