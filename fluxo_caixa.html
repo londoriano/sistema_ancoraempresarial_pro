@@ -227,8 +227,66 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalLancamento" tabindex="-1">
-        <div class="modal-dialog"><div class="modal-content"><div class="modal-header bg-dark text-white"><h5 class="modal-title">Novo Lançamento</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body"><form id="formLancamento" onsubmit="salvarLancamento(event)"><div class="btn-group w-100 mb-3"><input type="radio" class="btn-check" name="tipoMov" id="tipoReceita" value="Receita" onchange="toggleFormTipo()" checked><label class="btn btn-outline-success" for="tipoReceita">Entrada</label><input type="radio" class="btn-check" name="tipoMov" id="tipoSaida" value="Saida" onchange="toggleFormTipo()"><label class="btn btn-outline-danger" for="tipoSaida">Saída</label></div><div class="row g-2 mb-3"><div class="col-6"><input type="date" id="lancData" class="form-control" required></div><div class="col-6"><input type="number" step="0.01" id="lancValor" class="form-control" required placeholder="R$"></div></div><div class="mb-3"><label>Categoria</label><select id="lancCategoria" class="form-select" onchange="carregarSubcategoriasSelect()" required></select></div><div class="mb-3"><label>Subcategoria</label><select id="lancSubcategoria" class="form-select" disabled required></select></div><div class="mb-3"><input type="text" id="lancDescricao" class="form-control" placeholder="Descrição"></div><div class="form-check form-switch mb-3"><input class="form-check-input" type="checkbox" id="lancStatusRealizado" checked><label class="form-check-label">Realizado</label></div><button type="submit" class="btn btn-success w-100">SALVAR</button></form></div></div></div>
+ <div class="modal fade" id="modalLancamento" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title">Novo Lançamento</h5>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formLancamento" onsubmit="salvarLancamento(event)">
+                        
+                        <div class="btn-group w-100 mb-3">
+                            <input type="radio" class="btn-check" name="tipoMov" id="tipoReceita" value="Receita" onchange="toggleFormTipo()" checked>
+                            <label class="btn btn-outline-success" for="tipoReceita">Entrada</label>
+                            <input type="radio" class="btn-check" name="tipoMov" id="tipoSaida" value="Saida" onchange="toggleFormTipo()">
+                            <label class="btn btn-outline-danger" for="tipoSaida">Saída</label>
+                        </div>
+                        
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <input type="date" id="lancData" class="form-control" required>
+                            </div>
+                            <div class="col-6">
+                                <input type="number" step="0.01" id="lancValor" class="form-control" required placeholder="R$">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label>Categoria</label>
+                            <select id="lancCategoria" class="form-select" onchange="carregarSubcategoriasSelect()" required></select>
+                        </div>
+                        <div class="mb-3">
+                            <label>Subcategoria</label>
+                            <select id="lancSubcategoria" class="form-select" disabled required></select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <input type="text" id="lancDescricao" class="form-control" placeholder="Descrição">
+                        </div>
+                        
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="lancStatusRealizado" checked>
+                            <label class="form-check-label">Realizado (Pago/Recebido)</label>
+                        </div>
+
+                        <div class="bg-light p-2 rounded mb-3 border">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="lancRecorrente" onchange="toggleRecorrencia()">
+                                <label class="form-check-label fw-bold" for="lancRecorrente">Repetir Lançamento</label>
+                            </div>
+                            <div id="divRecorrencia" class="mt-2 d-none">
+                                <label class="small text-muted">Quantos meses/parcelas?</label>
+                                <input type="number" id="lancParcelas" class="form-control form-control-sm" value="2" min="2" max="360">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100">SALVAR</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
     
     <div class="modal fade" id="modalConfig" tabindex="-1">
@@ -537,28 +595,78 @@
         function abrirModalLancamento() { document.getElementById('formLancamento').reset(); document.getElementById('lancData').valueAsDate=new Date(); document.getElementById('tipoReceita').checked=true; toggleFormTipo(); new bootstrap.Modal(document.getElementById('modalLancamento')).show(); }
         
         function salvarLancamento(e) {
-            e.preventDefault(); const db=getDB(), idx=db.findIndex(c=>c.id===clientId);
-            const tipo = document.querySelector('input[name="tipoMov"]:checked').value;
-            const cs=document.getElementById('lancCategoria'), ss=document.getElementById('lancSubcategoria');
+            e.preventDefault(); 
+            const db = getDB(); 
+            const idx = db.findIndex(c => c.id === clientId);
             
+            // Captura dados do formulário
+            const tipo = document.querySelector('input[name="tipoMov"]:checked').value;
+            const cs = document.getElementById('lancCategoria');
+            const ss = document.getElementById('lancSubcategoria');
+            const dataBase = document.getElementById('lancData').value;
+            const valorBase = parseFloat(document.getElementById('lancValor').value);
+            const descBase = document.getElementById('lancDescricao').value;
+            const isRealizado = document.getElementById('lancStatusRealizado').checked;
+            
+            // Dados de Recorrência
+            const isRecorrente = document.getElementById('lancRecorrente').checked;
+            const qtdParcelas = isRecorrente ? parseInt(document.getElementById('lancParcelas').value) : 1;
+
             if(!cs.value || !ss.value) { alert("Categorize!"); return; }
-            const cat = cs.options[cs.selectedIndex].text;
-            const sub = ss.options[ss.selectedIndex].text;
-            let nat='-', comp='-';
-            if(tipo==='Saida') {
+            
+            const catNome = cs.options[cs.selectedIndex].text;
+            const subNome = ss.options[ss.selectedIndex].text;
+            
+            let nat = '-', comp = '-';
+            if(tipo === 'Saida') {
                 nat = ss.options[ss.selectedIndex].getAttribute('data-nat');
                 comp = ss.options[ss.selectedIndex].getAttribute('data-comp');
             }
 
-            db[idx].financeiro.push({
-                id:Date.now(), data:document.getElementById('lancData').value, tipo:tipo,
-                valor:parseFloat(document.getElementById('lancValor').value),
-                categoria:cat, subcategoria:sub, natureza:nat, comportamento:comp,
-                descricao:document.getElementById('lancDescricao').value,
-                status:document.getElementById('lancStatusRealizado').checked?'Realizado':'Provisionado'
-            });
-            saveDB(db); bootstrap.Modal.getInstance(document.getElementById('modalLancamento')).hide();
-            carregarLancamentos(); if(document.getElementById('view-anual').classList.contains('active')) carregarVisaoAnual();
+            // LOOP DE CRIAÇÃO (1x ou Nx)
+            for (let i = 0; i < qtdParcelas; i++) {
+                // 1. Cálculo da Data (Mês a Mês)
+                // Cria a data baseada na string 'YYYY-MM-DD' e soma 'i' meses
+                // Usamos UTC para evitar problemas de fuso horário voltando dia
+                let dateObj = new Date(dataBase + 'T12:00:00'); 
+                dateObj.setMonth(dateObj.getMonth() + i);
+                let dataFinal = dateObj.toISOString().split('T')[0];
+
+                // 2. Descrição Inteligente
+                let descricaoFinal = descBase;
+                if (isRecorrente) {
+                    descricaoFinal += ` (${i + 1}/${qtdParcelas})`;
+                }
+
+                // 3. Status Inteligente (Opcional: Futuro = Provisionado?)
+                // Por padrão, mantemos o que o usuário escolheu para todas, 
+                // mas você pode forçar provisionado se i > 0.
+                // Aqui mantive a escolha do usuário.
+                let statusFinal = isRealizado ? 'Realizado' : 'Provisionado';
+
+                db[idx].financeiro.push({
+                    id: Date.now() + i, // ID único sequencial
+                    data: dataFinal,
+                    tipo: tipo,
+                    valor: valorBase,
+                    categoria: catNome,
+                    subcategoria: subNome,
+                    natureza: nat,
+                    comportamento: comp,
+                    descricao: descricaoFinal,
+                    status: statusFinal
+                });
+            }
+
+            saveDB(db); 
+            bootstrap.Modal.getInstance(document.getElementById('modalLancamento')).hide();
+            
+            // Reset do form manual para garantir limpeza
+            document.getElementById('lancRecorrente').checked = false;
+            toggleRecorrencia();
+            
+            carregarLancamentos(); 
+            if(document.getElementById('view-anual').classList.contains('active')) carregarVisaoAnual();
         }
 
         function excluirLancamento(id) { if(confirm("Excluir?")){const db=getDB(),i=db.findIndex(c=>c.id===clientId);db[i].financeiro=db[i].financeiro.filter(l=>l.id!==id);saveDB(db);carregarLancamentos();carregarVisaoAnual();}}
@@ -806,6 +914,13 @@
             } else if (senha !== null) { // Só avisa se não for cancelamento
                 alert("⛔ ERRO: Senha incorreta. Nenhuma alteração foi feita.");
             }
+        }
+
+        function toggleRecorrencia() {
+            const check = document.getElementById('lancRecorrente').checked;
+            const div = document.getElementById('divRecorrencia');
+            if(check) div.classList.remove('d-none');
+            else div.classList.add('d-none');
         }
     </script>
 </body>
