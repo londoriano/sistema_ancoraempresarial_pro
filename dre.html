@@ -87,6 +87,47 @@
         .indent-0 { padding-left: 10px !important; }
         .indent-cat { padding-left: 25px !important; }
         .indent-sub { padding-left: 45px !important; }
+
+        /* --- ESTILOS DE IMPRESSÃO (PDF LIMPO) --- */
+        @media print {
+            /* 1. Remove cabeçalhos e rodapés automáticos do navegador (Data/URL) */
+            @page { 
+                margin: 0; 
+                size: auto; 
+            }
+
+            /* 2. Adiciona margem manual ao conteúdo para não colar na borda do papel */
+            body { 
+                margin: 1.5cm 1cm !important; 
+                background-color: white !important;
+                -webkit-print-color-adjust: exact !important; /* Força impressão de cores de fundo */
+                print-color-adjust: exact !important;
+            }
+
+            /* 3. Esconde Sidebar, Navbar, Botões e Ícones */
+            #sidebar-wrapper, 
+            .navbar, 
+            .btn, 
+            .bi-trash, 
+            .modal { 
+                display: none !important; 
+            }
+
+            /* 4. Expande o conteúdo para usar a folha toda */
+            #page-content-wrapper { 
+                margin-left: 0 !important; 
+                width: 100% !important; 
+                padding: 0 !important;
+            }
+            
+            .container-fluid { padding: 0 !important; }
+            .card { border: none !important; box-shadow: none !important; }
+            .card-header { background-color: white !important; border-bottom: 2px solid #000 !important; }
+            
+            /* Ajuste de fonte para caber melhor no papel A4 */
+            .table-dre { font-size: 0.8rem !important; }
+            .dre-cat-header { background-color: #eee !important; -webkit-print-color-adjust: exact; }
+        }
     </style>
 </head>
 <body>

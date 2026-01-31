@@ -424,7 +424,7 @@
             carregarLancamentos();
         }
 
-        function calcularDadosFluxo(ano) { // Antes era calcularDadosDRE
+        function calcularDadosFluxo(ano) {
             const db = getDB();
             const empresa = db.find(c => c.id === clientId);
             const lancs = empresa.financeiro.filter(l => l.data.startsWith(ano.toString()));
@@ -441,11 +441,15 @@
             let despTotalMes = Array(12).fill(0);
 
             lancs.forEach(l => {
-                // FILTRO IMPORTANTE: Remove itens não-caixa desta visualização
+                // FILTRO 1: Ignora Depreciação (Não é caixa)
                 if (l.categoria === "Amortização/Depreciação") return;
+                
+                // FILTRO 2: Ignora Provisionado (Não aconteceu ainda)
+                if (l.status !== 'Realizado') return; 
 
                 const mes = parseInt(l.data.split('-')[1]) - 1;
                 let gKey = '';
+                
                 if(l.tipo === 'Receita') {
                     gKey = 'RECEITAS';
                     recBrutaMes[mes] += l.valor;
@@ -453,6 +457,8 @@
                     despTotalMes[mes] += l.valor;
                     const nat = l.natureza || 'Despesa';
                     const comp = l.comportamento || 'Fixa';
+                    
+                    // Classificação defensiva (caso falte dados)
                     if(nat === 'Custo' && comp === 'Variavel') gKey = 'CUSTOS VARIÁVEIS';
                     else if(nat === 'Custo') gKey = 'CUSTOS FIXOS';
                     else if(nat === 'Despesa' && comp === 'Variavel') gKey = 'DESPESAS VARIÁVEIS';
@@ -807,65 +813,69 @@
         
         function carregarLancamentos() {
             const db = getDB();
-            const empresa = db.find(c => c.id === clientId);
+            const emp = db.find(c => c.id === clientId);
             const mes = document.getElementById('filtroMes').value;
-            const tb = document.getElementById('tabelaLancamentos');
+            const tb = document.getElementById('tabelaLancamentos'); 
             tb.innerHTML = '';
-
-            const fs = empresa.financeiro.filter(l => l.data.startsWith(mes));
-            let r = 0, s = 0;
+            
+            const fs = emp.financeiro.filter(l => l.data.startsWith(mes));
+            
+            let r = 0, s = 0; // Totais de Receita e Saída
 
             if(fs.length === 0) {
                 document.getElementById('emptyState').classList.remove('d-none');
             } else {
-                document.getElementById('emptyState').classList.add('d-none');
+                document.getElementById('emptyState').classList.add('d-none'); 
                 fs.sort((a,b) => new Date(b.data) - new Date(a.data));
-
+                
                 fs.forEach(l => {
-                    // Verifica se é item não-caixa (Contábil)
                     const isNonCash = l.categoria === "Amortização/Depreciação";
+                    const isRealizado = l.status === 'Realizado';
 
-                    // SOMAS (Lógica de Caixa)
-                    if(l.tipo === 'Receita') {
-                        r += l.valor; 
-                    } else {
-                        // Só soma nas saídas se NÃO for depreciação
-                        if (!isNonCash) {
-                            s += l.valor;
-                        }
+                    // LÓGICA DE SOMA (Regime de Caixa)
+                    // Só soma se for Realizado. Se for Depreciação, nunca soma no caixa.
+                    if (isRealizado) {
+                        if (l.tipo === 'Receita') r += l.valor; 
+                        else if (!isNonCash) s += l.valor;
                     }
+                    
+                    // LÓGICA VISUAL
+                    let bTipo = l.tipo === 'Receita' 
+                        ? '<span class="badge badge-receita">Receita</span>' 
+                        : `<span class="badge bg-secondary badge-natureza">${l.natureza || '-'}</span>`;
+                    
+                    let cor = l.tipo === 'Receita' ? 'text-success' : 'text-danger';
+                    let styleRow = '';
+                    let styleVal = '';
+                    let iconStatus = '';
 
-                    // VISUAL
-                    let bTipo = '';
-                    let cor = '';
-                    let rowStyle = '';
-                    let valStyle = '';
-
-                    if (l.tipo === 'Receita') {
-                        bTipo = '<span class="badge badge-receita">Receita</span>';
-                        cor = 'text-success';
-                    } else if (isNonCash) {
-                        // Estilo especial para Depreciação
+                    if (isNonCash) {
+                        // Estilo Depreciação
                         bTipo = '<span class="badge bg-secondary">Contábil</span>';
-                        cor = 'text-muted'; // Valor cinza
-                        rowStyle = 'background-color: #f8f9fa; font-style: italic;'; // Linha inteira diferenciada
-                        valStyle = 'text-decoration: line-through; opacity: 0.7;'; // Riscado para indicar que não soma
-                    } else {
-                        bTipo = `<span class="badge bg-secondary badge-natureza">${l.natureza}</span>`;
-                        cor = 'text-danger';
+                        cor = 'text-muted';
+                        styleRow = 'background-color: #f8f9fa; font-style: italic;';
+                        styleVal = 'text-decoration: line-through; opacity: 0.7;';
+                    } 
+                    else if (!isRealizado) {
+                        // Estilo Provisionado (Pendente)
+                        iconStatus = '<i class="bi bi-hourglass-split text-warning me-1" title="Provisionado (Não afeta saldo)"></i>';
+                        styleRow = 'opacity: 0.6; background-color: #fffcf5;'; // Levemente apagado e amarelado
+                        cor = 'text-muted'; // Valor cinza para não chamar atenção
                     }
 
-                    // Renderiza Linha
+                    // Renderiza
                     tb.innerHTML += `
-                        <tr style="${rowStyle}">
+                        <tr style="${styleRow}">
                             <td class="ps-4">${l.data.split('-').reverse().join('/')}</td>
-                            <td class="fw-bold text-dark">${l.descricao}</td>
+                            <td class="fw-bold text-dark">
+                                ${iconStatus} ${l.descricao}
+                            </td>
                             <td>
                                 <small class="d-block text-muted">${l.categoria}</small>
                                 ${l.subcategoria}
                             </td>
                             <td>${bTipo}</td>
-                            <td class="text-end pe-4 fw-bold ${cor}" style="${valStyle}">
+                            <td class="text-end pe-4 fw-bold ${cor}" style="${styleVal}">
                                 ${l.tipo === 'Saida' ? '-' : ''} ${l.valor.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
                             </td>
                             <td class="text-end">
@@ -875,10 +885,11 @@
                 });
             }
 
+            // Atualiza Cards Superiores
             document.getElementById('totalReceitas').innerText = r.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
             document.getElementById('totalSaidas').innerText = s.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
             
-            const sal = r - s;
+            const sal = r - s; 
             document.getElementById('saldoMes').innerText = sal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
             document.getElementById('saldoMes').className = `fw-bold mb-0 ${sal >= 0 ? 'text-success' : 'text-danger'}`;
         }
