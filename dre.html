@@ -204,24 +204,58 @@
         </div>
     </div>
 
-    <div class="modal fade" id="modalImpostos" tabindex="-1">
+<div class="modal fade" id="modalImpostos" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header bg-secondary text-white">
-                    <h5 class="modal-title">Configurar Tributação sobre Lucro</h5>
+                    <h5 class="modal-title">Configurar Tributos e Créditos</h5>
                     <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="small text-muted">Adicione os impostos que incidem sobre o <strong>Resultado Antes do IR (LAIR)</strong>. Ex: IRPJ (15%), CSLL (9%), Adicional IR (10%).</p>
+                    <p class="small text-muted">Defina alíquotas (%) ou créditos nominais (R$).</p>
                     
-                    <div class="input-group mb-3">
-                        <input type="text" id="novoImpNome" class="form-control" placeholder="Nome (ex: IRPJ)">
-                        <input type="number" id="novoImpAliq" class="form-control" placeholder="%" step="0.01" style="max-width: 80px;">
-                        <button class="btn btn-primary" onclick="addImposto()">Adicionar</button>
+                    <div class="row g-2 mb-3">
+                        <div class="col-12">
+                            <label class="small fw-bold">Nome do Tributo</label>
+                            <input type="text" id="novoImpNome" class="form-control form-control-sm" placeholder="Ex: Simples Nacional">
+                        </div>
+                        <div class="col-6">
+                            <label class="small fw-bold">Tipo / Base</label>
+                            <select id="novoImpTipo" class="form-select form-select-sm" onchange="toggleInputTipo()">
+                                <option value="receita">(-) % Sobre Receita Bruta</option>
+                                <option value="lucro">(-) % Sobre Lucro (LAIR)</option>
+                                <option value="credito_pis">(+) Crédito PIS (R$ Fixo)</option>
+                                <option value="credito_cofins">(+) Crédito COFINS (R$ Fixo)</option>
+                                <option value="credito_outros">(+) Outro Crédito (R$ Fixo)</option>
+                            </select>
+                        </div>
+                        <div class="col-3">
+                            <label class="small fw-bold">Valor</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text" id="spanSifrao" style="display:none">R$</span>
+                                <input type="number" id="novoImpValor" class="form-control" placeholder="0.00" step="0.01">
+                                <span class="input-group-text" id="spanPorcent">%</span>
+                            </div>
+                        </div>
+                        <div class="col-3 d-flex align-items-end">
+                            <button class="btn btn-primary btn-sm w-100" onclick="addImposto()">Add</button>
+                        </div>
                     </div>
 
-                    <ul class="list-group" id="listaImpostos">
-                        </ul>
+                    <div class="table-responsive border rounded" style="max-height: 300px; overflow-y: auto;">
+                        <table class="table table-sm mb-0 small">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Tipo</th>
+                                    <th class="text-end">Valor</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="listaImpostos">
+                                </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -266,45 +300,94 @@
             new bootstrap.Modal(document.getElementById('modalImpostos')).show();
         }
 
+        // --- FUNÇÕES AUXILIARES DO MODAL ---
+        
+        function toggleInputTipo() {
+            const tipo = document.getElementById('novoImpTipo').value;
+            const isCredito = tipo.includes('credito');
+            
+            // Alterna visualmente entre % e R$
+            if (isCredito) {
+                document.getElementById('spanSifrao').style.display = 'inline-block';
+                document.getElementById('spanPorcent').style.display = 'none';
+                document.getElementById('novoImpValor').placeholder = "0.00";
+                
+                // Sugere nomes se estiver vazio
+                const inputNome = document.getElementById('novoImpNome');
+                if(!inputNome.value) {
+                    if(tipo === 'credito_pis') inputNome.value = 'Crédito PIS';
+                    else if(tipo === 'credito_cofins') inputNome.value = 'Crédito COFINS';
+                }
+            } else {
+                document.getElementById('spanSifrao').style.display = 'none';
+                document.getElementById('spanPorcent').style.display = 'inline-block';
+                document.getElementById('novoImpValor').placeholder = "Aliq %";
+            }
+        }
+
         function addImposto() {
             const nome = document.getElementById('novoImpNome').value;
-            const aliq = parseFloat(document.getElementById('novoImpAliq').value);
-            if(!nome || isNaN(aliq)) return;
+            const tipo = document.getElementById('novoImpTipo').value;
+            const valor = parseFloat(document.getElementById('novoImpValor').value);
+            
+            if(!nome || isNaN(valor)) { alert("Preencha corretamente."); return; }
 
             const db = getDB();
             const idx = db.findIndex(c => c.id === clientId);
             
-            // Inicializa array se não existir
             if(!db[idx].configImpostos) db[idx].configImpostos = [];
             
-            db[idx].configImpostos.push({ id: Date.now(), nome, aliquota: aliq });
+            db[idx].configImpostos.push({ 
+                id: Date.now(), 
+                nome, 
+                tipo, 
+                valor: valor // Agora representa % ou R$ dependendo do tipo
+            });
             saveDB(db);
             
             document.getElementById('novoImpNome').value = '';
-            document.getElementById('novoImpAliq').value = '';
+            document.getElementById('novoImpValor').value = '';
             renderListaImpostos();
-            gerarDRE(); // Recalcula na hora
+            gerarDRE(); 
         }
 
         function renderListaImpostos() {
             const db = getDB();
             const empresa = db.find(c => c.id === clientId);
-            const lista = document.getElementById('listaImpostos');
-            lista.innerHTML = '';
+            const tbody = document.getElementById('listaImpostos');
+            tbody.innerHTML = '';
             
             const impostos = empresa.configImpostos || [];
             
             if(impostos.length === 0) {
-                lista.innerHTML = '<li class="list-group-item text-center text-muted small">Nenhum imposto configurado (Lucro Real/Presumido).</li>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-3">Nenhum tributo configurado.</td></tr>';
                 return;
             }
 
             impostos.forEach((imp, i) => {
-                lista.innerHTML += `
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <span>${imp.nome} <strong class="ms-2">(${imp.aliquota}%)</strong></span>
-                        <i class="bi bi-trash text-danger cursor-pointer" onclick="delImposto(${i})"></i>
-                    </li>
+                let badge = '';
+                let valDisplay = '';
+                
+                if(imp.tipo === 'receita') {
+                    badge = '<span class="badge bg-warning text-dark">(-) S/ Receita</span>';
+                    valDisplay = imp.valor + '%';
+                } else if(imp.tipo === 'lucro') {
+                    badge = '<span class="badge bg-dark">(-) S/ Lucro</span>';
+                    valDisplay = imp.valor + '%';
+                } else {
+                    badge = '<span class="badge bg-success">(+) Crédito</span>';
+                    valDisplay = imp.valor.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="align-middle">${imp.nome}</td>
+                        <td class="align-middle">${badge}</td>
+                        <td class="align-middle text-end fw-bold">${valDisplay}</td>
+                        <td class="align-middle text-end">
+                            <i class="bi bi-trash text-danger cursor-pointer" onclick="delImposto(${i})"></i>
+                        </td>
+                    </tr>
                 `;
             });
         }
@@ -318,9 +401,7 @@
             gerarDRE();
         }
 
-        // --- MOTOR DE CÁLCULO DRE (NOVA ESTRUTURA) ---
-        // --- MOTOR DE CÁLCULO DRE (COM CORES CORRIGIDAS) ---
-        function gerarDRE() {
+       function gerarDRE() {
             const db = getDB();
             const empresa = db.find(c => c.id === clientId);
             if(!empresa || !empresa.financeiro) return;
@@ -328,25 +409,79 @@
             const inicio = document.getElementById('mesInicio').value;
             const fim = document.getElementById('mesFim').value;
 
-           // FILTRO DE DATA (Alterado para COMPETÊNCIA)
             const lancs = empresa.financeiro.filter(l => {
-                // Se existe dataCompetencia, usa ela. Se não, usa a data normal (fallback).
                 const dataConsiderada = l.dataCompetencia || l.data;
-                
-                return dataConsiderada.slice(0, 7) >= inicio && 
-                       dataConsiderada.slice(0, 7) <= fim;
+                return dataConsiderada.slice(0, 7) >= inicio && dataConsiderada.slice(0, 7) <= fim;
             });
 
-            // ESTRUTURA DE DADOS
             let DRE = {
                 receitaBruta: 0, deducoes: 0, custosTotais: 0, despesasTotais: 0, 
                 receitaFin: 0, despesaFin: 0, depreciacao: 0,
-                detalhes: { 
-                    rec: {}, ded: {}, custos: {}, desp: {}, rf: {}, dfn: {}, dep: {}
-                }
+                detalhes: { rec: {}, ded: {}, custos: {}, desp: {}, rf: {}, dfn: {}, dep: {} }
             };
 
-            // CLASSIFICAÇÃO
+            // --- FUNÇÕES AUXILIARES INTERNAS (Corrigindo o erro 'R is not defined') ---
+            
+            // 1. Renderiza Linha Individual (R)
+            const R = (desc, val, estilo = '', nivel = 0, forceRed = false) => {
+                // Tratamento para Títulos de Categoria (Sem Valor)
+                if (val === null) {
+                    let indent = nivel === 1 ? 'indent-cat' : 'indent-0';
+                    return `<tr class="${estilo}"><td class="${indent}" colspan="3">${desc}</td></tr>`;
+                }
+
+                // Cálculo de AV% (Agora seguro pois acessa a variavel DRE local)
+                const av = (DRE.receitaBruta > 0) ? (val / DRE.receitaBruta * 100).toFixed(1) + '%' : '-';
+                
+                let indentClass = nivel === 1 ? 'indent-cat' : (nivel === 2 ? 'indent-sub' : 'indent-0');
+                let corVal = 'text-dark';
+                let sinal = '';
+
+                // Lógica Visual
+                if (estilo.includes('res-final')) {
+                    corVal = 'text-white';
+                    sinal = val >= 0 ? '+ ' : ''; 
+                } else {
+                    if (desc.includes('(-)') || desc.includes('Imposto') || desc.includes('Custo') || desc.includes('Despesa') || forceRed) {
+                        corVal = 'val-saida';
+                        sinal = '- ';
+                    } else if (val >= 0) {
+                        corVal = 'val-entrada';
+                        sinal = '+ ';
+                    }
+                }
+
+                let valNumerico = Math.abs(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                let valFinal = `${sinal}R$ ${valNumerico}`;
+
+                // Ajuste para exibição de prejuízo na linha final
+                if (estilo.includes('res-final') && val < 0) {
+                    valFinal = val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                }
+
+                return `<tr class="${estilo}"><td class="${indentClass}">${desc}</td><td class="col-valor ${corVal}">${valFinal}</td><td class="col-av">${desc.includes('AV') ? '' : av}</td></tr>`;
+            };
+
+            // 2. Renderiza Grupos (RenderGroup)
+            const RenderGroup = (objDetalhes, isExpense = false) => {
+                let html = '';
+                for(let [cat, info] of Object.entries(objDetalhes)) {
+                    // Título
+                    html += R(cat, null, 'dre-cat-header', 1, isExpense);
+                    // Itens
+                    for(let [sub, sVal] of Object.entries(info.subs)) {
+                        html += R(sub, sVal, 'dre-sub-row', 2, isExpense);
+                    }
+                    // Total
+                    html += R(`Total ${cat}`, info.total, 'dre-cat-total', 1, isExpense);
+                }
+                return html;
+            };
+
+            // --- FIM DAS FUNÇÕES AUXILIARES ---
+
+
+            // 1. CLASSIFICAÇÃO DOS DADOS
             lancs.forEach(l => {
                 const val = l.valor;
                 const cat = l.categoria; 
@@ -363,23 +498,20 @@
                     }
                 } 
                 else { // SAÍDAS
-
-                    // CASO ESPECIAL: Amortização de Empréstimo com Juros Discriminados
+                    // A. Juros Específicos
                     if (l.valorJuros && l.valorJuros > 0) {
-                        // O DRE considera APENAS os juros como despesa
                         DRE.despesaFin += l.valorJuros;
                         addDetalhe(DRE.detalhes.dfn, cat, sub, l.valorJuros);
-                        
-                        // O restante (Valor Total - Juros) é Amortização de Principal (Passivo)
-                        // E NÃO entra no DRE. Por isso damos return aqui para pular o resto.
                         return; 
                     }
 
+                    // B. IGNORAR IMPOSTOS DO CAIXA (Para usar o cálculo automático)
                     if (catLower.includes('imposto') || catLower.includes('simples') || catLower.includes('taxas')) {
-                        DRE.deducoes += val;
-                        addDetalhe(DRE.detalhes.ded, cat, sub, val);
+                        return; 
                     }
-                    else if (catLower.includes('banco') || catLower.includes('juros') || catLower.includes('financeira')) {
+
+                    // C. Outros
+                    if (catLower.includes('banco') || catLower.includes('juros') || catLower.includes('financeira')) {
                         DRE.despesaFin += val;
                         addDetalhe(DRE.detalhes.dfn, cat, sub, val);
                     }
@@ -400,7 +532,36 @@
                 }
             });
 
-            // --- CÁLCULOS ---
+            // 2. CÁLCULO DE TRIBUTOS E CRÉDITOS
+            const configImpostos = empresa.configImpostos || [];
+            const impsReceita = configImpostos.filter(i => i.tipo === 'receita');
+            const impsCredito = configImpostos.filter(i => i.tipo.includes('credito')); 
+            const impsLucro   = configImpostos.filter(i => i.tipo === 'lucro');
+
+            // 2.1 Impostos s/ Receita (%)
+            let htmlImpostosVenda = '';
+            let totalImpVendaCalc = 0;
+            
+            impsReceita.forEach(imp => {
+                const valCalc = DRE.receitaBruta * (imp.valor / 100);
+                totalImpVendaCalc += valCalc;
+                htmlImpostosVenda += renderLinhaSimples(imp.nome + ` (${imp.valor}%)`, valCalc, 'dre-sub-row indent-sub', false);
+            });
+            DRE.deducoes += totalImpVendaCalc;
+
+            // 2.2 Créditos (Valores Nominais R$)
+            let htmlCreditos = '';
+            let totalCreditosCalc = 0;
+
+            impsCredito.forEach(imp => {
+                const valCredito = imp.valor; 
+                totalCreditosCalc += valCredito;
+                htmlCreditos += renderLinhaSimples(`(+) ${imp.nome}`, valCredito, 'dre-sub-row indent-sub', true); // true = positivo
+            });
+            DRE.deducoes -= totalCreditosCalc;
+
+
+            // --- CÁLCULO DOS RESULTADOS ---
             const receitaLiquida = DRE.receitaBruta - DRE.deducoes;
             const lucroBruto = receitaLiquida - DRE.custosTotais;
             const ebitda = lucroBruto - DRE.despesasTotais;
@@ -408,146 +569,85 @@
             const resFinanceiro = DRE.receitaFin - DRE.despesaFin;
             const lair = ebit + resFinanceiro;
 
-            // Impostos
-            const impostosConfig = empresa.configImpostos || [];
+            // 2.3 Impostos s/ Lucro (%)
             let totalImpostosLucro = 0;
-            let detalheImpostosHtml = '';
-            if (lair > 0 && impostosConfig.length > 0) {
-                impostosConfig.forEach(imp => {
-                    const valorImp = lair * (imp.aliquota / 100);
+            let htmlImpostosLucro = '';
+
+            if (lair > 0 && impsLucro.length > 0) {
+                impsLucro.forEach(imp => {
+                    const valorImp = lair * (imp.valor / 100);
                     totalImpostosLucro += valorImp;
-                    detalheImpostosHtml += renderLinhaSimples(imp.nome + ` (${imp.aliquota}%)`, valorImp, 'dre-sub-row indent-sub', false);
+                    htmlImpostosLucro += renderLinhaSimples(imp.nome + ` (${imp.valor}%)`, valorImp, 'dre-sub-row indent-sub', false);
                 });
             }
             const lucroLiquido = lair - totalImpostosLucro;
 
 
-            // --- RENDERIZAÇÃO ---
+            // --- RENDERIZAÇÃO HTML ---
             const tbody = document.getElementById('tabelaDreBody');
             tbody.innerHTML = '';
-
-           // Função R (Renderizadora de Linha com Sinais + / -)
-            const R = (desc, val, estilo = '', nivel = 0, forceRed = false) => {
-                // Tratamento para Títulos de Categoria (Sem Valor)
-                if (val === null) {
-                    let indent = nivel === 1 ? 'indent-cat' : 'indent-0';
-                    return `<tr class="${estilo}"><td class="${indent}" colspan="3">${desc}</td></tr>`;
-                }
-
-                const av = (DRE.receitaBruta > 0) ? (val / DRE.receitaBruta * 100).toFixed(1) + '%' : '-';
-                let indentClass = nivel === 1 ? 'indent-cat' : (nivel === 2 ? 'indent-sub' : 'indent-0');
-                
-                // Lógica de Cores e Sinais
-                let corVal = 'text-dark';
-                let sinal = '';
-
-                // Se for linha FINAL (Sólida), força BRANCO
-                if (estilo.includes('res-final')) {
-                    corVal = 'text-white';
-                    // Na linha final, o sinal segue a matemática simples (Lucro + / Prejuízo -)
-                    sinal = val >= 0 ? '+ ' : ''; 
-                    // Nota: Não forçamos "-" aqui pois o numberFormat já traria o negativo se fosse o caso, 
-                    // mas para consistência visual vamos deixar o browser formatar o negativo e só por o + no positivo.
-                } 
-                else {
-                    // É Saída/Despesa? (Vermelho e Sinal Menos)
-                    if (desc.includes('(-)') || desc.includes('Imposto') || desc.includes('Custo') || desc.includes('Despesa') || forceRed) {
-                        corVal = 'val-saida';
-                        sinal = '- ';
-                    }
-                    // É Receita/Positivo? (Verde e Sinal Mais)
-                    else if (val >= 0) {
-                        corVal = 'val-entrada';
-                        sinal = '+ ';
-                    }
-                }
-
-                // Formatação Numérica
-                // Usamos Math.abs(val) porque o sinal (+ ou -) já será colocado manualmente na string
-                let valNumerico = Math.abs(val).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                let valFinal = `${sinal}R$ ${valNumerico}`;
-
-                // Ajuste específico para Prejuízo na linha final (para não ficar "- -R$...")
-                if (estilo.includes('res-final') && val < 0) {
-                    valFinal = val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-                }
-
-                return `<tr class="${estilo}"><td class="${indentClass}">${desc}</td><td class="col-valor ${corVal}">${valFinal}</td><td class="col-av">${desc.includes('AV') ? '' : av}</td></tr>`;
-            };
-
-           // Função RenderGroup (NOVA LÓGICA: Título -> Subs -> Total)
-            const RenderGroup = (objDetalhes, isExpense = false) => {
-                let html = '';
-                for(let [cat, info] of Object.entries(objDetalhes)) {
-                    
-                    // 1. Título da Categoria (Valor NULL para não exibir nada na coluna de valor)
-                    html += R(cat, null, 'dre-cat-header', 1, isExpense);
-                    
-                    // 2. Subcategorias (Valores Individuais)
-                    for(let [sub, sVal] of Object.entries(info.subs)) {
-                        html += R(sub, sVal, 'dre-sub-row', 2, isExpense);
-                    }
-
-                    // 3. Total da Categoria (Rodapé com Opacidade)
-                    html += R(`Total ${cat}`, info.total, 'dre-cat-total', 1, isExpense);
-                }
-                return html;
-            };
-
             let html = '';
-            
-            // 1. Receita Bruta
+
+            // 1. Receita
             html += R('(=) RECEITA BRUTA OPERACIONAL', DRE.receitaBruta, 'res-receita-bruta');
-            html += RenderGroup(DRE.detalhes.rec, false); // false = não é despesa
+            html += RenderGroup(DRE.detalhes.rec, false);
             
             // 2. Deduções
-            html += R('(-) Deduções e Impostos s/ Venda', DRE.deducoes, 'text-muted fw-bold');
-            html += RenderGroup(DRE.detalhes.ded, true); // true = é despesa (pintar subs de vermelho)
+            html += R('(-) Deduções e Impostos', null, 'text-muted fw-bold mb-2'); 
             
-            // 3. Receita Líquida
+            // Renderiza Calculados Automaticamente
+            if(totalImpVendaCalc > 0) {
+                html += R('Impostos s/ Venda', null, 'dre-cat-header', 1);
+                html += htmlImpostosVenda;
+                html += R('Total Impostos', totalImpVendaCalc, 'dre-cat-total', 1, true);
+            }
+
+            if(totalCreditosCalc > 0) {
+                html += R('Créditos Tributários', null, 'dre-cat-header', 1);
+                html += htmlCreditos;
+                html += R('Total Créditos', totalCreditosCalc, 'dre-cat-total text-success', 1, false);
+            }
+            
+            // Ded. Manuais (Se houver alguma que escapou do filtro, embora tenhamos bloqueado 'imposto')
+            html += RenderGroup(DRE.detalhes.ded, true);
+
+            html += R('(=) Total Deduções Líquidas', DRE.deducoes, 'dre-cat-total', 0, true);
+
+            // 3. Resto do DRE
             html += R('(=) RECEITA LÍQUIDA', receitaLiquida, 'res-receita-liq');
             
-            // 4. Custos
             html += R('(-) Custos Operacionais', DRE.custosTotais, 'text-muted fw-bold');
-            html += RenderGroup(DRE.detalhes.custos, true); // true
+            html += RenderGroup(DRE.detalhes.custos, true);
 
-            // 5. Lucro Bruto
             html += R('(=) LUCRO BRUTO', lucroBruto, 'res-lucro-bruto');
             
-            // 6. Despesas
             html += R('(-) Despesas Operacionais', DRE.despesasTotais, 'text-muted fw-bold');
-            html += RenderGroup(DRE.detalhes.desp, true); // true
+            html += RenderGroup(DRE.detalhes.desp, true);
             
             html += '<tr><td colspan="3" class="bg-light p-1"></td></tr>';
 
-            // 7. EBITDA
             html += R('(=) EBITDA (Lajida)', ebitda, 'res-ebitda');
             
             if(DRE.depreciacao > 0) {
                 html += R('(-) Depreciação / Amortização', DRE.depreciacao, 'text-muted fw-bold');
-                html += RenderGroup(DRE.detalhes.dep, true); // true
+                html += RenderGroup(DRE.detalhes.dep, true);
             }
             
-            // 8. EBIT
             html += R('(=) EBIT (Resultado Operacional)', ebit, 'res-ebit');
 
-            // 9. Financeiro
             if(DRE.receitaFin > 0 || DRE.despesaFin > 0) {
                 html += '<tr><td colspan="3" class="fw-bold text-muted mt-2 border-0 small ps-3">Resultado Financeiro</td></tr>';
                 if(DRE.receitaFin > 0) { html += R('(+) Receitas Financeiras', DRE.receitaFin, 'text-success'); html += RenderGroup(DRE.detalhes.rf, false); }
                 if(DRE.despesaFin > 0) { html += R('(-) Despesas Financeiras', DRE.despesaFin, 'text-danger'); html += RenderGroup(DRE.detalhes.dfn, true); }
             }
             
-            // 10. LAIR
             html += R('(=) LAIR (Lucro Antes do IR)', lair, 'res-lair');
 
-            // 11. Impostos
             if (totalImpostosLucro > 0) {
                 html += R('(-) IR e Contribuição Social', totalImpostosLucro, 'text-muted fw-bold');
-                html += detalheImpostosHtml; 
+                html += htmlImpostosLucro; 
             }
 
-            // 12. Final
             const classeFinal = lucroLiquido >= 0 ? 'res-final-lucro' : 'res-final-preju';
             const labelFinal = lucroLiquido >= 0 ? '(=) LUCRO LÍQUIDO DO PERÍODO' : '(=) PREJUÍZO LÍQUIDO DO PERÍODO';
             html += R(labelFinal, lucroLiquido, classeFinal);
@@ -555,15 +655,30 @@
             tbody.innerHTML = html;
         }
 
-        // Função Helper para renderizar linhas manuais (impostos)
+        // --- FUNÇÕES DE RENDERIZAÇÃO (REINCLUINDO PARA GARANTIR) ---
+        // Certifique-se que estas funções (RenderGroup e R) estejam presentes e NÃO duplicadas.
+        // A lógica do 'R' deve ser a mesma da última correção (com tratamento de null).
+
+        // Helper renderLinhaSimples (Atualizado para suportar positivo/verde)
         function renderLinhaSimples(desc, val, classes, isPositive) {
-            const valFormat = `(${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`;
+            let valFormat = val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            let corVal = isPositive ? 'val-entrada' : 'val-saida';
+            
+            // Formatação de parênteses
+            if (!isPositive) {
+                valFormat = `(${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`;
+            } else {
+                valFormat = `+ ${val.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            }
+
             return `<tr class="${classes}">
                 <td>${desc}</td>
-                <td class="col-valor val-saida">${valFormat}</td>
+                <td class="col-valor ${corVal}">${valFormat}</td>
                 <td class="col-av"></td>
             </tr>`;
         }
+
+
 
         // Função Auxiliar de Agregação
         function addDetalhe(groupObj, cat, sub, val) {
