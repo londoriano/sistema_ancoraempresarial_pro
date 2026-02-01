@@ -300,6 +300,14 @@
                             <input type="date" id="lancCompetencia" class="form-control form-control-sm text-muted">
                             <div class="form-text" style="font-size: 0.75rem;">Se vazio, assume a mesma data do caixa.</div>
                         </div>
+
+                        <div id="divJuros" class="mb-3 p-2 bg-warning bg-opacity-10 border border-warning rounded d-none">
+                            <label class="small fw-bold text-dark">Juros Embutidos (R$)</label>
+                            <input type="number" step="0.01" id="lancJuros" class="form-control form-control-sm" placeholder="Quanto deste valor é juros?">
+                            <div class="form-text text-dark" style="font-size: 0.75rem;">
+                                O DRE considerará apenas este valor como despesa. O restante será tratado como amortização de dívida.
+                            </div>
+                        </div>
                         
                         <div class="mb-3">
                             <label>Categoria</label>
@@ -699,6 +707,7 @@
             
             // CARREGA COMPETÊNCIA (Se não existir, usa a data do caixa)
             document.getElementById('lancCompetencia').value = l.dataCompetencia || l.data;
+            document.getElementById('lancJuros').value = l.valorJuros || "";
 
             document.getElementById('lancValor').value = l.valor;
             document.getElementById('lancDescricao').value = l.descricao;
@@ -750,6 +759,7 @@
             const dataCompBase = document.getElementById('lancCompetencia').value || dataBase;
 
             const valorBase = parseFloat(document.getElementById('lancValor').value);
+            const valorJuros = parseFloat(document.getElementById('lancJuros').value) || 0;
             const descBase = document.getElementById('lancDescricao').value;
             const isRealizado = document.getElementById('lancStatusRealizado').checked;
             
@@ -807,6 +817,7 @@
                         dataCompetencia: dataCompFinal, // SALVA COMPETÊNCIA CALCULADA
                         tipo: tipo,
                         valor: valorBase,
+                        valorJuros: valorJuros,
                         categoria: catNome,
                         subcategoria: subNome,
                         natureza: nat,
@@ -919,6 +930,20 @@
             const id = document.getElementById('lancCategoria').value;
             const sub = document.getElementById('lancSubcategoria');
             
+            // 1. Lógica Visual de Juros
+            const divJuros = document.getElementById('divJuros');
+            const selCat = document.getElementById('lancCategoria');
+            // Verifica se o texto da categoria contém 'Banco' ou 'Financeira'
+            const catTexto = selCat.options[selCat.selectedIndex]?.text.toLowerCase() || "";
+            
+            if(catTexto.includes('banco') || catTexto.includes('financeira') || catTexto.includes('empréstimo')) {
+                divJuros.classList.remove('d-none');
+            } else {
+                divJuros.classList.add('d-none');
+                document.getElementById('lancJuros').value = ""; // Limpa se esconder
+            }
+
+            // 2. Lógica Original de Subcategorias
             if(!id) {
                 sub.disabled = true;
                 sub.innerHTML = '<option value="">Selecione Categoria...</option>';
@@ -926,16 +951,13 @@
             }
             
             const c = getDB().find(x => x.id === clientId).configCategorias.find(x => x.id == id);
-            
             sub.innerHTML = '<option value="">Selecione...</option>';
             sub.disabled = false;
             
-            if (c.subcategorias && c.subcategorias.length > 0) {
+            if (c && c.subcategorias.length > 0) {
                 c.subcategorias.forEach(s => { 
                     const o = document.createElement('option'); 
                     o.text = s.nome; 
-                    
-                    // Só adiciona atributos se for Saída (Receita não usa Natureza/Comportamento no cadastro)
                     if(c.tipo === 'Saida'){ 
                         o.setAttribute('data-nat', s.natureza || 'Despesa'); 
                         o.setAttribute('data-comp', s.comportamento || 'Fixa'); 
@@ -943,7 +965,7 @@
                     sub.add(o); 
                 });
             } else {
-                sub.innerHTML = '<option value="">Sem subcategorias (Cadastre na engrenagem)</option>';
+                sub.innerHTML = '<option value="">Sem subcategorias cadastradas</option>';
             }
         }
         

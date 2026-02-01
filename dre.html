@@ -363,6 +363,18 @@
                     }
                 } 
                 else { // SAÍDAS
+
+                    // CASO ESPECIAL: Amortização de Empréstimo com Juros Discriminados
+                    if (l.valorJuros && l.valorJuros > 0) {
+                        // O DRE considera APENAS os juros como despesa
+                        DRE.despesaFin += l.valorJuros;
+                        addDetalhe(DRE.detalhes.dfn, cat, sub, l.valorJuros);
+                        
+                        // O restante (Valor Total - Juros) é Amortização de Principal (Passivo)
+                        // E NÃO entra no DRE. Por isso damos return aqui para pular o resto.
+                        return; 
+                    }
+
                     if (catLower.includes('imposto') || catLower.includes('simples') || catLower.includes('taxas')) {
                         DRE.deducoes += val;
                         addDetalhe(DRE.detalhes.ded, cat, sub, val);
@@ -376,7 +388,6 @@
                         addDetalhe(DRE.detalhes.dep, cat, sub, val);
                     }
                     else {
-                        // Separação Operacional (Custos vs Despesas)
                         const nat = l.natureza || 'Despesa';
                         if (nat === 'Custo') {
                             DRE.custosTotais += val;
