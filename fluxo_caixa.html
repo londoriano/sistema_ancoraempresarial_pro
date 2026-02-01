@@ -162,7 +162,17 @@
                             <div class="row g-2 align-items-end">
                                 <div class="col-md-3">
                                     <label class="small fw-bold text-muted mb-1">Período</label>
-                                    <input type="month" id="filtroMes" class="form-control form-control-sm bg-white" onchange="carregarLancamentos()">
+                                    <div class="input-group input-group-sm">
+                                        <button class="btn btn-outline-secondary bg-white" type="button" onclick="mudarMes(-1)">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </button>
+                                        
+                                        <input type="month" id="filtroMes" class="form-control bg-white text-center fw-bold" onchange="carregarLancamentos()">
+                                        
+                                        <button class="btn btn-outline-secondary bg-white" type="button" onclick="mudarMes(1)">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="col-md-4">
                                     <label class="small fw-bold text-muted mb-1">Buscar</label>
@@ -1047,6 +1057,28 @@
             const sal = r - s; 
             document.getElementById('saldoMes').innerText = sal.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
             document.getElementById('saldoMes').className = `fw-bold mb-0 ${sal >= 0 ? 'text-success' : 'text-danger'}`;
+        }
+
+        // Função para navegar entre meses pelas setas
+        function mudarMes(delta) {
+            const input = document.getElementById('filtroMes');
+            if (!input.value) return;
+
+            // Converte valor atual (YYYY-MM) para números
+            const [ano, mes] = input.value.split('-').map(Number);
+            
+            // Cria data (mês em JS é 0-11, por isso subtraímos 1)
+            // O objeto Date lida automaticamente com viradas de ano
+            const data = new Date(ano, mes - 1 + delta, 1);
+            
+            // Formata de volta para YYYY-MM
+            const novoAno = data.getFullYear();
+            const novoMes = String(data.getMonth() + 1).padStart(2, '0');
+            
+            input.value = `${novoAno}-${novoMes}`;
+            
+            // Atualiza a tela
+            carregarLancamentos();
         }
 
         // --- FUNÇÃO DE RESET TOTAL (SEGURANÇA MÁXIMA) ---
